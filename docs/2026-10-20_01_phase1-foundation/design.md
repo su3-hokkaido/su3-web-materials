@@ -51,6 +51,21 @@ mode renders an `<a>`); `type`: `button | submit | reset`; `name`, `value`; form
 files and a single tag to document; the trade-off is a larger single class, which is acceptable for
 the spike and revisited if variants diverge.
 
+### 2a. Behavior base classes instead of mixins (judgment call)
+
+`src/shared/behaviors/` provides `FormAssociatedElement` (`ElementInternals`, `disabled`, `name`,
+`value`, `<fieldset disabled>` tracking) and `FormSubmitterElement` (`type`, submit and reset).
+Every consumer so far fits one hierarchy, and mixin class expressions would need explicit return
+types to be emitted in declaration files. Mixins can be introduced when a control needs to combine
+behaviors. Findings from the spike that shaped this code:
+
+- A subclass `static properties` must be annotated `PropertyDeclarations`; the inferred object type
+  is not assignable to the parent's.
+- The form action runs in a `setTimeout` so a `preventDefault()` from a later `click` listener is
+  honored; custom elements cannot be the form's submitter, so `requestSubmit()` is used and the
+  `name`/`value` pair is set as the form value only for that call.
+- `HTMLElement.click()` is ignored for disabled form controls, so tests dispatch the click event.
+
 ### 3. Foundation parts deferred
 
 Ripple, focus ring and elevation stay internal (a CSS state layer and `:focus-visible` outline in
