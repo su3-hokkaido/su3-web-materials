@@ -20,7 +20,7 @@ Each item maps to one commit. Check items off as they complete.
 - [x] Write `button.test.ts` (variants, keyboard, click, disabled and soft-disabled, link mode,
       form submit and reset, events, parts)
 - [x] Port `src/conventions.test.ts` (Node and pnpm pins, unique titles, `Default` story)
-- [ ] Add the `ci` script (format check, lint, typecheck, test, analyze, build-storybook) and make
+- [x] Add the `ci` script (format check, lint, typecheck, test, analyze, build-storybook) and make
       it pass
 - [ ] Review with the `component-reviewer` agent and fix findings
 - [ ] Record the decisions in `docs/project_plan.md` section 17 and update `CLAUDE.md` if any

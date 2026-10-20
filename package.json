@@ -26,7 +26,8 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "ci": "pnpm run analyze && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build-storybook"
   },
   "dependencies": {
     "lit": "^3.3.3"
