@@ -116,7 +116,9 @@ export class Su3Button extends FormSubmitterElement {
     const unavailable = this.isDisabled || this.softDisabled;
 
     if (this.href) {
-      // An anchor without href is not a link for assistive technology, so the role is explicit.
+      // An anchor without href is neither a link for assistive technology nor focusable, so the
+      // role is explicit and a soft-disabled link gets a tabindex to stay reachable. A hard-disabled
+      // link is intentionally left out of the tab order.
       return html`<a
         class="control"
         part="button"
@@ -125,6 +127,7 @@ export class Su3Button extends FormSubmitterElement {
         download=${this.download || nothing}
         rel=${this.rel || nothing}
         role=${unavailable ? 'link' : nothing}
+        tabindex=${this.softDisabled && !this.isDisabled ? '0' : nothing}
         aria-disabled=${unavailable ? 'true' : nothing}
         aria-label=${this.accessibleName ?? nothing}
         @click=${this.#onControlClick}

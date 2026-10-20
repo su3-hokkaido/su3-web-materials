@@ -16,8 +16,8 @@ Each item maps to one commit. Check items off as they complete.
 - [x] Add `custom-elements-manifest.config.mjs` and the `analyze` script
 - [x] Configure Storybook (`.storybook/main.ts`, `preview.ts`, theme toolbar, manifest) and add
       `button.stories.ts` with a `Default` story and one story per variant and state
-- [ ] Configure Vitest Browser Mode (`vitest.config.ts`) and install Chromium
-- [ ] Write `button.test.ts` (variants, keyboard, click, disabled and soft-disabled, link mode,
+- [x] Configure Vitest Browser Mode (`vitest.config.ts`) and install Chromium
+- [x] Write `button.test.ts` (variants, keyboard, click, disabled and soft-disabled, link mode,
       form submit and reset, events, parts)
 - [ ] Port `src/conventions.test.ts` (Node and pnpm pins, unique titles, `Default` story)
 - [ ] Add the `ci` script (format check, lint, typecheck, test, analyze, build-storybook) and make
