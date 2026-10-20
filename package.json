@@ -18,13 +18,16 @@
     }
   },
   "scripts": {
-    "dev": "storybook dev -p 5070",
-    "build-storybook": "storybook build",
+    "analyze": "cem analyze",
+    "dev": "pnpm run analyze && storybook dev -p 5070",
+    "build-storybook": "pnpm run analyze && storybook build",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "ci": "pnpm run analyze && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build-storybook"
   },
   "dependencies": {
     "lit": "^3.3.3"
@@ -53,5 +56,6 @@
     "typescript-eslint": "8.71.2",
     "vite": "8.3.4",
     "vitest": "5.0.5"
-  }
+  },
+  "customElements": "custom-elements.json"
 }

@@ -38,8 +38,9 @@ Derived values:
 3. Create the five files, following an existing component in the same scope as the model when one
    exists (the first one built in Phase 1 is the reference). Responsibilities:
    - `{name}.ts`: the `Su3{PascalName}` class extending `LitElement` (or a shared behavior mixin),
-     JSDoc (`@summary`, `@slot`, `@csspart`, `@cssprop`, `@fires`), element registration, and the
-     `HTMLElementTagNameMap` declaration. Follow the decorator decision recorded in
+     JSDoc (description as the body, then `@tagname su3-{name}`, `@summary`, `@slot`, `@csspart`,
+     `@cssprop`, `@fires`; an `@description` tag is ignored by the analyzer) and the `HTMLElementTagNameMap`
+     declaration. No side effects: it must not call `customElements.define`. Follow the decorator decision recorded in
      `docs/project_plan.md` §17; confirm Lit APIs with Context7.
    - `{name}.styles.ts`: `css` template using `--su3-comp-{name}-*` with a `var()` fallback chain
      to `--su3-sys-*` and a built-in default; handle `prefers-reduced-motion` and `forced-colors`.
@@ -47,7 +48,8 @@ Derived values:
      manifest, and an exported `Default` story (clean URLs point at `--default`).
    - `{name}.test.ts`: Vitest Browser Mode; role/label queries; cover each variant, keyboard and
      pointer behavior, disabled states, form participation (if any) and events.
-   - `index.ts`: re-export the class and its types only (no registration side effects).
+   - `index.ts`: the component entry. Registers the element with `defineElement` from
+     `src/shared/define-element.ts` and re-exports the class and its types.
 4. Re-export from the scope's `index.ts` and add the `./{name}.js` (or product) entry to
    `package.json` `exports`.
 5. Run `make lint typecheck test` and fix failures. Then run `make vrt-update` to create the

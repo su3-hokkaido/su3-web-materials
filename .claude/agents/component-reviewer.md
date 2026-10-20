@@ -30,8 +30,8 @@ findings, do not edit files. The specification is `docs/project_plan.md` (ยง1, ย
 - Public API documented with JSDoc (`@summary`, `@slot`, `@csspart`, `@cssprop`, `@fires`).
 - Properties reflect sensibly; events are composed/bubbling only when intended; form controls are
   form-associated (`ElementInternals`, value/validity/reset/restore) and delegate focus properly.
-- Importing the module has no side effect beyond registering the element, and does not throw
-  without `document`/`window` APIs at import time.
+- The class module `{name}.ts` has no side effects (no `customElements.define`); the component's
+  `index.ts` registers through `defineElement`. Importing either does not throw on the server.
 - No `any`, and no unchecked casts that hide real typing problems.
 
 **4. Component layout and exports.**
@@ -39,7 +39,8 @@ findings, do not edit files. The specification is `docs/project_plan.md` (ยง1, ย
   `src/products/{productId}/`, `{category}` and `{name}` lower-case kebab-case.
 - It contains exactly `{name}.ts`, `{name}.styles.ts`, `{name}.stories.ts`, `{name}.test.ts`,
   `index.ts`.
-- Re-exported from the scope's `index.ts` (classes and types only, no registration side effects)
+- Re-exported from the scope's `index.ts` directly from `{name}.ts` (classes and types only, no
+  registration side effects)
   and covered by the matching `package.json` `exports` entry (`./{name}.js`, `./{productId}`).
 
 **5. Stories and tests.**

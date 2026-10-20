@@ -67,10 +67,10 @@ catalog and may grow into those components after the MVP (§14, Phase 9).
 | Visual regression test | Playwright `toHaveScreenshot`                               | Against the built Storybook, in Docker. See §11                                                                                                   |
 | Versioning             | Changesets                                                  | SemVer (MAJOR.MINOR.PATCH)                                                                                                                        |
 
-**Open (Phase 1)**: decorators. Lit supports TypeScript decorators, but Lit's publishing guide
-requires compiling them to standard ES2021 before publishing. Phase 1 compares
-(a) standard decorators and (b) no decorators (`static properties` + `customElements.define`) using
-the current Lit documentation, picks one, and records it in §17.
+**Decision (Phase 1)**: no decorators. Components use `static properties`, `declare`d fields whose
+defaults are assigned in the constructor, and a guarded `customElements.define`. The Phase 1 spike
+verified tsc, Vitest Browser Mode, Storybook docs and the custom elements manifest analyzer, and
+that importing the module in Node does not throw. See §17.
 
 ---
 
@@ -80,14 +80,14 @@ the current Lit documentation, picks one, and records it in §17.
 src/
   shared/
     tokens/                 # --su3-ref-*, --su3-sys-* CSS (exported as styles and as plain CSS)
-    behaviors/              # mixins: form-associated, aria delegation, activation click, ...
+    behaviors/              # base classes: form-associated, form-submitter, ...
     components/{category}/{name}/
-      {name}.ts             # element class + @customElement-equivalent registration
+      {name}.ts             # element class, no side effects
       {name}.styles.ts      # css`...` using --su3-comp-{name}-* tokens
       {name}.stories.ts
       {name}.test.ts
-      index.ts
-    index.ts                # re-exports every shared component (no side-effect registration, see below)
+      index.ts              # component entry: defineElement(...) registration + re-export
+    index.ts                # re-exports classes and types of every shared component (registers nothing)
   products/{productId}/
     theme.css               # token overrides that define this product's look
     components/{category}/{name}/...   # product-only components (same layout)
@@ -104,12 +104,14 @@ docs/
   `containment`, ...
 - Dependency direction: products may import `shared`; `shared` never imports products; products
   never import each other.
-- **Side effects (Decision)**: each component's own module registers its custom element. The
-  package root `index.ts` only re-exports classes and types, and consumers import
-  `su3-web-materials/button.js` (registers `<su3-button>`) or use a catch-all
-  `su3-web-materials/all.js`. `sideEffects` in `package.json` lists the registering modules.
+- **Side effects (Decision)**: the class module `{name}.ts` has no side effects. The component's
+  `index.ts` registers the element through the guarded `defineElement` helper
+  (`src/shared/define-element.ts`) and re-exports the class. The package root only re-exports
+  classes and types from the `{name}.ts` modules, and consumers import
+  `su3-web-materials/button.js` (the component entry, registers `<su3-button>`) or a catch-all
+  `su3-web-materials/all.js`. `sideEffects` in `package.json` lists the registering entries.
 - Behavior shared by many elements (form association, ARIA delegation) lives in
-  `src/shared/behaviors/` as mixins; visual helpers (ripple, focus ring, elevation) are public
+  `src/shared/behaviors/` as base classes (`FormAssociatedElement`, `FormSubmitterElement`); visual helpers (ripple, focus ring, elevation) are public
   components in the `foundation` category.
 
 ---
@@ -342,7 +344,14 @@ ancestor, implemented by redefining `--su3-sys-color-*`. Switchable from the Sto
 - Each component test covers: rendering of each variant, attribute/property reflection, keyboard
   and pointer interaction, disabled / soft-disabled states, form participation (where applicable),
   events, and the documented CSS parts and slots.
-- Coverage thresholds are set in Phase 1 once the first component exists.
+- Vitest runs two projects: `browser` (component and token tests, real Chromium) and `conventions`
+  (`src/conventions.test.ts`, Node), which mechanically checks the rules in §3, §10 and §13: component
+  layout and naming, `@tagname`/summary/description JSDoc, registration only in the component's
+  `index.ts`, token-only styles (no color literals, no `!important`, only `--su3-*` variables),
+  story titles and `Default` stories, scope re-exports, `su3-` tags, the absence of material-web
+  names, and the Node.js pin.
+- Coverage thresholds (v8): 95% statements, lines and functions, 90% branches; raise them as the
+  suite grows.
 
 ### Visual regression (Playwright)
 
@@ -423,7 +432,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
 
 0. **Plan and cleanup** (this document; update `CLAUDE.md`, agents and skills for Lit/CSS-token
    conventions once the plan is approved).
-1. **Foundation spike**: pnpm / TS / ESLint / Prettier / Storybook (web-components-vite) /
+1. **Foundation spike** (done, §17): pnpm / TS / ESLint / Prettier / Storybook (web-components-vite) /
    Vitest Browser Mode; token files; design language doc; resolve the decorator question; build
    `su3-button` (all variants) end to end with story, test and docs.
 2. **Docker / compose / Makefile** (carry over and trim; no AWS targets).
@@ -498,3 +507,43 @@ and explain the reasoning in the PR description.
     MVP scope and the post-MVP roadmap (§3, §4, §14).
   - Opened items: decorators (Phase 1), tsdown unbundled output and CSS handling (Phase 4),
     preview environment mechanism (Phase 6).
+- **Phase 1 spike (2026-10-20)**: decorators resolved as **none**.
+  - Why: Lit recommends experimental decorators only "for now", and standard decorators need the
+    `accessor` keyword plus compiler and bundler support that varies between tools. Decorator-free
+    code is plain ES2023, needs no publish-time transform and works with `erasableSyntaxOnly`.
+  - Verified: `tsc --noEmit` (strict); `cem analyze` reads types, defaults, descriptions, slots,
+    parts and events from `static properties`, `declare` fields and JSDoc; Vitest Browser Mode
+    queries inside the shadow root by role; the Storybook docs page renders the manifest tables;
+    `import` of the module in Node succeeds (Lit's DOM shim).
+  - Costs to keep in mind: property names appear twice (in `static properties` and as `declare`
+    fields), so the component test must cover each reflected attribute; private `#methods` show up
+    in the manifest unless filtered.
+  - `rs-module-lexer`'s install script is not needed by the analyzer and stays disabled.
+- **Phase 1 completed (2026-10-20)**: the vertical slice works end to end; `pnpm run ci` passes
+  (127 browser and convention tests, 98.6% statements, Storybook build, no a11y violations in 9
+  stories and two themes). Details: `docs/2026-10-20_01_phase1-foundation/`.
+  - Delivered: tooling; the Snowfield design language (`docs/design/design-language.md`); `ref` and
+    `sys` tokens with a generated `tokens.css` (light, dark, reduced motion) and contrast tests;
+    `FormAssociatedElement` and `FormSubmitterElement` base classes; `<su3-button>` (five variants,
+    three sizes, link mode, soft-disabled, form submit and reset); Storybook with manifest-driven
+    docs and a theme toolbar; two Vitest projects (`browser`, `conventions`).
+  - Decisions: one `<su3-button>` with a `variant` property rather than five elements; base classes
+    instead of mixins (§3); the class module is side-effect free and the component `index.ts`
+    registers it through `defineElement`, so `@tagname` is required in the JSDoc; the state layer
+    (label color over the container) is used for hover and press on every variant, so overriding
+    `--su3-comp-button-container-color` keeps the feedback; typeface, border width and focus-ring
+    sizes are system tokens, and a convention test forbids color, size and duration literals in
+    component styles.
+  - Review (`component-reviewer`) findings fixed: lost hover feedback on overridden container color,
+    direct use of a reference token, hard-coded sizes, unknown `type` not treated as `submit`,
+    manifest noise from static members, `dev` and `build-storybook` needing `custom-elements.json`.
+  - Known limits, documented in JSDoc: no `event.submitter` or `formaction`, not the form's default
+    button for Enter, `aria-labelledby` and `<label for>` on the host are not forwarded, and a
+    capture-phase `stopPropagation()` on an ancestor also stops the submit.
+  - Follow-ups carried to later phases: tests for `prefers-reduced-motion`, `forced-colors` and
+    `pointer: coarse` (needs media emulation, Phase 5 with the VRT); `--su3-comp-button-*` hooks for
+    the disabled colors; Space-key activation for link-mode buttons (decided against: links behave
+    as links); validity and reset/restore callbacks in `FormAssociatedElement` (Phase 7, with the
+    first real form control); `package.json` `exports` and publishing (Phase 4).
+  - `README_sample_from_another_repo.md` in the repository root is a leftover from the template
+    repository and should be moved out of the root or deleted by the owner.

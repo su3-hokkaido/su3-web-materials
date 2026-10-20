@@ -160,3 +160,6 @@ blob-report/
 
 # Generated custom elements manifest
 custom-elements.json
+
+# Vitest browser mode failure screenshots
+.vitest/

@@ -36,11 +36,12 @@ Summary of `docs/project_plan.md` §3, §4, §10 and §13:
   `src/products/{productId}/components/{category}/{name}/`. `{category}` is lower-case kebab-case,
   `{name}` is the lower-case kebab-case component name (`button`, `icon-button`).
 - Each component directory contains exactly `{name}.ts`, `{name}.styles.ts`, `{name}.stories.ts`,
-  `{name}.test.ts` and `index.ts`. Shared behavior goes in `src/shared/behaviors/` as mixins and
+  `{name}.test.ts` and `index.ts`. Shared behavior goes in `src/shared/behaviors/` as base classes and
   tokens in `src/shared/tokens/`.
 - Element tag `su3-{name}`, class `Su3{Name}`, `HTMLElementTagNameMap` declared. Each component
-  module registers its own element; the package root `index.ts` only re-exports classes and types
-  (no registration side effects).
+  class module `{name}.ts` has no side effects; the component's `index.ts` registers the element with
+  `defineElement` and re-exports it; the package root `src/shared/index.ts` re-exports classes and
+  types straight from `{name}.ts` (it registers nothing).
 - Story `title` is `{Category}/{Component}` (no productId), and every story file exports a
   `Default` story, because clean URLs (`/{productId}/c/{category}/{component}`) point at
   `--default`. Titles must be unique across `shared` and each product.
@@ -49,12 +50,15 @@ Summary of `docs/project_plan.md` §3, §4, §10 and §13:
   tokens. Tokens have three layers: `--su3-ref-*`, `--su3-sys-*`, `--su3-comp-{name}-*`; a
   component reads `--su3-comp-*` with a `var()` fallback chain to `--su3-sys-*` and a built-in
   default. Support `prefers-reduced-motion` and `forced-colors`.
-- Document the public API with JSDoc (`@summary`, `@slot`, `@csspart`, `@cssprop`, `@fires`) so it
-  reaches `custom-elements.json` and the Storybook docs.
+- Document the public API with JSDoc so it reaches `custom-elements.json` and the Storybook docs:
+  the description is the JSDoc body (not an `@description` tag, which the analyzer ignores), plus
+  `@tagname su3-{name}` (required, because registration lives in `index.ts`), `@summary`, `@slot`,
+  `@csspart`, `@cssprop` and `@fires`. Private and protected members are filtered out of the
+  manifest by `custom-elements-manifest.config.mjs`.
 - Prefer native semantics (`ElementInternals`, `delegatesFocus`, real `<button>`/`<input>` in the
   shadow root); form controls are form-associated. No a11y addon violations.
-- Importing a module must not throw on the server and must not touch `document` beyond registering
-  the element.
+- Importing a module must not throw on the server and must not touch `document` or `customElements`
+  (registration lives in the component's `index.ts`, through the guarded `defineElement`).
 - Dependency direction: products may import `shared`; `shared` never imports products; products
   never import each other.
 - Optional per-story VRT settings go in `parameters.vrt`:
@@ -62,7 +66,9 @@ Summary of `docs/project_plan.md` §3, §4, §10 and §13:
 - After a visual change or a new story, run `make vrt-update` and review the changed baselines in
   `tests/vrt/__screenshots__/`; delete the baselines of removed or renamed stories, and of stories or viewports you exclude
   with `parameters.vrt` (the orphan check cannot see those).
-- Open decisions (decorators, tsdown output, preview mechanism) are listed in
+- No decorators (§2): use `static properties`, `declare`d fields initialised in the constructor,
+  and a guarded `customElements.define`. Open decisions (tsdown output, preview mechanism) are
+  listed in
   `docs/project_plan.md`; resolve them in the named phase and record them in §17.
 
 ## Component checklist
@@ -100,7 +106,9 @@ A new or changed component is done when:
   fast. For Cloudflare (Workers Static Assets, `_redirects`, wrangler), use the Cloudflare
   documentation search. Hosting is Workers Static Assets on the free plan; do not introduce paid
   services (no AWS Secrets Manager, no paid Cloudflare features).
-- Docker is the default environment. Run commands through `make` targets (`make help` lists them);
+- Until Phase 2 adds the Docker setup and the Makefile, run the pnpm scripts directly (`pnpm run ci`
+  is the same check as `make ci` will be). Afterwards Docker is the default environment: run commands
+  through `make` targets (`make help` lists them);
   `local-*` targets exist for running on the host.
 - GitHub Actions (`.github/workflows/`, `docs/project_plan.md` §8): CI runs `pnpm run ci` and the
   Docker VRT on every PR. Pin any new action to a full commit SHA with a `# vX.Y.Z` comment (Dependabot
@@ -147,7 +155,8 @@ cut from `develop`, and merged back into `develop` via PR. Per-task docs live un
    `git switch -c feature/...`).
 4. Implement; **update `task.md`** as items complete. Use **`/new-component`** to add components.
 5. If the change is user-visible in the published package, add a changeset (`make changeset`).
-6. Run `make format` and `make ci` before handing back. If `README.md` or `README_JA.md` changed,
+6. Run `make format` and `make ci` (`pnpm run format` and `pnpm run ci` until Phase 2) before
+   handing back. If `README.md` or `README_JA.md` changed,
    run the `readme-sync` agent.
 7. Have the `component-reviewer` subagent review the diff, then present it for the user to commit.
 
