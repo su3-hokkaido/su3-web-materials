@@ -11,7 +11,7 @@ Each item maps to one commit. Check items off as they complete.
 - [x] Decorator spike: minimal Lit element with `static properties` and `declare` fields; verify
       tsc, Storybook, Vitest Browser Mode and the manifest analyzer; record the outcome
 - [x] Add `src/shared/behaviors/` form-associated base classes (`ElementInternals`, submit, reset)
-- [ ] Implement `su3-button` (`button.ts`, `button.styles.ts`, `index.ts`) and export it from
+- [x] Implement `su3-button` (`button.ts`, `button.styles.ts`, `index.ts`) and export it from
       `src/shared/index.ts`
 - [ ] Add `custom-elements-manifest.config.mjs` and the `analyze` script
 - [ ] Configure Storybook (`.storybook/main.ts`, `preview.ts`, theme toolbar, manifest) and add

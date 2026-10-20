@@ -80,14 +80,14 @@ that importing the module in Node does not throw. See §17.
 src/
   shared/
     tokens/                 # --su3-ref-*, --su3-sys-* CSS (exported as styles and as plain CSS)
-    behaviors/              # mixins: form-associated, aria delegation, activation click, ...
+    behaviors/              # base classes: form-associated, form-submitter, ...
     components/{category}/{name}/
-      {name}.ts             # element class + @customElement-equivalent registration
+      {name}.ts             # element class, no side effects
       {name}.styles.ts      # css`...` using --su3-comp-{name}-* tokens
       {name}.stories.ts
       {name}.test.ts
-      index.ts
-    index.ts                # re-exports every shared component (no side-effect registration, see below)
+      index.ts              # component entry: defineElement(...) registration + re-export
+    index.ts                # re-exports classes and types of every shared component (registers nothing)
   products/{productId}/
     theme.css               # token overrides that define this product's look
     components/{category}/{name}/...   # product-only components (same layout)
@@ -104,12 +104,14 @@ docs/
   `containment`, ...
 - Dependency direction: products may import `shared`; `shared` never imports products; products
   never import each other.
-- **Side effects (Decision)**: each component's own module registers its custom element. The
-  package root `index.ts` only re-exports classes and types, and consumers import
-  `su3-web-materials/button.js` (registers `<su3-button>`) or use a catch-all
-  `su3-web-materials/all.js`. `sideEffects` in `package.json` lists the registering modules.
+- **Side effects (Decision)**: the class module `{name}.ts` has no side effects. The component's
+  `index.ts` registers the element through the guarded `defineElement` helper
+  (`src/shared/define-element.ts`) and re-exports the class. The package root only re-exports
+  classes and types from the `{name}.ts` modules, and consumers import
+  `su3-web-materials/button.js` (the component entry, registers `<su3-button>`) or a catch-all
+  `su3-web-materials/all.js`. `sideEffects` in `package.json` lists the registering entries.
 - Behavior shared by many elements (form association, ARIA delegation) lives in
-  `src/shared/behaviors/` as mixins; visual helpers (ripple, focus ring, elevation) are public
+  `src/shared/behaviors/` as base classes (`FormAssociatedElement`, `FormSubmitterElement`); visual helpers (ripple, focus ring, elevation) are public
   components in the `foundation` category.
 
 ---

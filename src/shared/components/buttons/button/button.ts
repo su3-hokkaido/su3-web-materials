@@ -1,0 +1,163 @@
+import { html, LitElement, nothing, type PropertyDeclarations, type TemplateResult } from 'lit';
+import { FormSubmitterElement } from '../../../behaviors/index.ts';
+import { buttonStyles } from './button.styles.ts';
+
+/** Emphasis levels, from the most to the least prominent. */
+export type ButtonVariant = 'filled' | 'tonal' | 'elevated' | 'outlined' | 'text';
+
+export type ButtonSize = 'sm' | 'md' | 'lg';
+
+/**
+ * @tagname su3-button
+ *
+ * @summary A button that triggers an action, submits or resets a form, or navigates as a link.
+ *
+ * @description
+ * Choose the variant by emphasis: `filled` for the single primary action on a screen, `tonal` and
+ * `elevated` for secondary actions that need weight, `outlined` for medium emphasis and `text` for
+ * the lowest. Setting `href` renders an anchor instead of a button. A `soft-disabled` button looks
+ * disabled but stays focusable and announces why through `aria-disabled`; use it when the reason
+ * for being unavailable must remain discoverable.
+ *
+ * Inside a form the button submits by default (`type="submit"`), like `<button>`. Set `type` to
+ * `button` for plain actions or `reset` to reset the form.
+ *
+ * @slot - The label.
+ * @slot leading - An icon shown before the label.
+ * @slot trailing - An icon shown after the label.
+ *
+ * @csspart button - The interactive element (a `<button>` or, with `href`, an `<a>`).
+ * @csspart label - The wrapper around the default slot.
+ *
+ * @cssprop [--su3-comp-button-container-color] - Background color.
+ * @cssprop [--su3-comp-button-label-color] - Label and icon color.
+ * @cssprop [--su3-comp-button-border-color] - Border color.
+ * @cssprop [--su3-comp-button-border-width=1px] - Border width.
+ * @cssprop [--su3-comp-button-container-shape] - Corner radius.
+ * @cssprop [--su3-comp-button-elevation] - Box shadow.
+ * @cssprop [--su3-comp-button-height] - Height.
+ * @cssprop [--su3-comp-button-padding-inline] - Horizontal padding.
+ * @cssprop [--su3-comp-button-gap] - Space between icon and label.
+ * @cssprop [--su3-comp-button-icon-size] - Size of slotted icons.
+ * @cssprop [--su3-comp-button-font-family] - Font family.
+ * @cssprop [--su3-comp-button-font-size] - Font size.
+ * @cssprop [--su3-comp-button-font-weight] - Font weight.
+ * @cssprop [--su3-comp-button-line-height] - Line height.
+ * @cssprop [--su3-comp-button-focus-ring-color] - Focus indicator color.
+ */
+export class Su3Button extends FormSubmitterElement {
+  static override styles = buttonStyles;
+
+  /** Keeps `host.focus()` and label clicks working although the interactive element is inside. */
+  static override shadowRootOptions: ShadowRootInit = {
+    ...LitElement.shadowRootOptions,
+    delegatesFocus: true,
+  };
+
+  static override properties: PropertyDeclarations = {
+    variant: { reflect: true },
+    size: { reflect: true },
+    softDisabled: { type: Boolean, attribute: 'soft-disabled', reflect: true },
+    href: {},
+    target: {},
+    download: {},
+    rel: {},
+    accessibleName: { attribute: 'aria-label' },
+  };
+
+  /** Emphasis level. */
+  declare variant: ButtonVariant;
+
+  /** Control size. */
+  declare size: ButtonSize;
+
+  /**
+   * Disabled in appearance and behavior, but still focusable. Clicks are ignored and
+   * `aria-disabled` is exposed.
+   */
+  declare softDisabled: boolean;
+
+  /** When set, the button renders as a link to this URL. */
+  declare href: string;
+
+  /** Where to open the link (`_blank`, ...). Only used with `href`. */
+  declare target: string;
+
+  /** Makes the link download the target; the value suggests a file name. Only used with `href`. */
+  declare download: string;
+
+  /** Link relationship. Only used with `href`. */
+  declare rel: string;
+
+  /**
+   * The accessible name for the inner control, read from the host's `aria-label`. Use it when the
+   * label slot has no text (for example an icon-only button).
+   */
+  declare accessibleName: string | null;
+
+  constructor() {
+    super();
+    this.variant = 'filled';
+    this.size = 'md';
+    this.softDisabled = false;
+    this.href = '';
+    this.target = '';
+    this.download = '';
+    this.rel = '';
+    this.accessibleName = null;
+  }
+
+  protected override get canPerformFormAction(): boolean {
+    return super.canPerformFormAction && !this.softDisabled && !this.href;
+  }
+
+  protected override render(): TemplateResult {
+    const content = html`<slot name="leading"></slot>
+      <span class="label" part="label"><slot></slot></span>
+      <slot name="trailing"></slot>`;
+    const unavailable = this.isDisabled || this.softDisabled;
+
+    if (this.href) {
+      // An anchor without href is not a link for assistive technology, so the role is explicit.
+      return html`<a
+        class="control"
+        part="button"
+        href=${unavailable ? nothing : this.href}
+        target=${this.target || nothing}
+        download=${this.download || nothing}
+        rel=${this.rel || nothing}
+        role=${unavailable ? 'link' : nothing}
+        aria-disabled=${unavailable ? 'true' : nothing}
+        aria-label=${this.accessibleName ?? nothing}
+        @click=${this.#onControlClick}
+        >${content}</a
+      >`;
+    }
+
+    return html`<button
+      class="control"
+      part="button"
+      type="button"
+      ?disabled=${this.isDisabled}
+      aria-disabled=${this.softDisabled && !this.isDisabled ? 'true' : nothing}
+      aria-label=${this.accessibleName ?? nothing}
+      @click=${this.#onControlClick}
+    >
+      ${content}
+    </button>`;
+  }
+
+  /** Swallows clicks while unavailable so neither listeners on the host nor links see them. */
+  #onControlClick = (event: Event): void => {
+    if (this.isDisabled || this.softDisabled) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'su3-button': Su3Button;
+  }
+}

@@ -36,11 +36,12 @@ Summary of `docs/project_plan.md` §3, §4, §10 and §13:
   `src/products/{productId}/components/{category}/{name}/`. `{category}` is lower-case kebab-case,
   `{name}` is the lower-case kebab-case component name (`button`, `icon-button`).
 - Each component directory contains exactly `{name}.ts`, `{name}.styles.ts`, `{name}.stories.ts`,
-  `{name}.test.ts` and `index.ts`. Shared behavior goes in `src/shared/behaviors/` as mixins and
+  `{name}.test.ts` and `index.ts`. Shared behavior goes in `src/shared/behaviors/` as base classes and
   tokens in `src/shared/tokens/`.
 - Element tag `su3-{name}`, class `Su3{Name}`, `HTMLElementTagNameMap` declared. Each component
-  module registers its own element; the package root `index.ts` only re-exports classes and types
-  (no registration side effects).
+  class module `{name}.ts` has no side effects; the component's `index.ts` registers the element with
+  `defineElement` and re-exports it; the package root `src/shared/index.ts` re-exports classes and
+  types straight from `{name}.ts` (it registers nothing).
 - Story `title` is `{Category}/{Component}` (no productId), and every story file exports a
   `Default` story, because clean URLs (`/{productId}/c/{category}/{component}`) point at
   `--default`. Titles must be unique across `shared` and each product.
@@ -53,8 +54,8 @@ Summary of `docs/project_plan.md` §3, §4, §10 and §13:
   reaches `custom-elements.json` and the Storybook docs.
 - Prefer native semantics (`ElementInternals`, `delegatesFocus`, real `<button>`/`<input>` in the
   shadow root); form controls are form-associated. No a11y addon violations.
-- Importing a module must not throw on the server and must not touch `document` beyond registering
-  the element.
+- Importing a module must not throw on the server and must not touch `document` or `customElements`
+  (registration lives in the component's `index.ts`, through the guarded `defineElement`).
 - Dependency direction: products may import `shared`; `shared` never imports products; products
   never import each other.
 - Optional per-story VRT settings go in `parameters.vrt`:
