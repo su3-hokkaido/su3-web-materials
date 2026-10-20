@@ -6,8 +6,8 @@ Each item maps to one commit. Check items off as they complete.
       `.prettierignore`, `tsconfig.json`, `.gitignore`; run `pnpm install`
 - [x] Add `eslint.config.js` (dependency-direction zones kept; no React rules) and make
       `pnpm run lint` and `pnpm run typecheck` pass on an empty `src/`
-- [ ] Write `docs/design/design-language.md` (name, seed color, palette, shape, type, motion)
-- [ ] Add tokens under `src/shared/tokens/` (`ref`, `sys`; light, dark, reduced motion)
+- [x] Write `docs/design/design-language.md` (name, seed color, palette, shape, type, motion)
+- [x] Add tokens under `src/shared/tokens/` (`ref`, `sys`; light, dark, reduced motion)
 - [ ] Decorator spike: minimal Lit element with `static properties` and `declare` fields; verify
       tsc, Storybook, Vitest Browser Mode and the manifest analyzer; record the outcome
 - [ ] Add `src/shared/behaviors/` form-associated mixin (`ElementInternals`, submit, reset)
