@@ -22,7 +22,6 @@ if (!hasProduct && process.env.PRODUCT_ID !== undefined) {
 const config: StorybookConfig = {
   stories: [
     '../src/shared/**/*.stories.ts',
-    '../src/spike/**/*.stories.ts',
     ...(hasProduct ? [`../src/products/${productId}/**/*.stories.ts`] : []),
   ],
   addons: ['@storybook/addon-a11y', '@storybook/addon-docs', '@storybook/addon-themes'],
