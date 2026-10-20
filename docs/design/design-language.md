@@ -53,7 +53,7 @@ Roles describe purpose, not hue. Components use roles only, never ramp steps.
 | `border`           | Hairlines and dividers                          | neutral-200        | neutral-700        |
 | `border-strong`    | Input and outline-button borders (non-text 3:1) | neutral-500        | neutral-500        |
 | `accent`           | Filled controls, links, selected state          | accent-700         | accent-300         |
-| `accent-hover`     | Accent on hover                                 | accent-800         | accent-200         |
+| `accent-hover`     | Accent on hover, for elements that swap color   | accent-800         | accent-200         |
 | `accent-active`    | Accent while pressed                            | accent-900         | accent-100         |
 | `on-accent`        | Content on `accent`                             | accent-50          | neutral-950        |
 | `accent-subtle`    | Tonal fills                                     | accent-100         | accent-800         |
@@ -72,7 +72,7 @@ opacity; disabled containers use `text` at 12% opacity.
 | --------------------------------------- | ----- | ---- | -------- |
 | `text` on `surface`                     | 16.5  | 16.5 | 4.5      |
 | `text-muted` on `surface`               | 5.8   | 11.7 | 4.5      |
-| `text-muted` on `surface-sunken`        | 5.5   | 13.3 | 4.5      |
+| `text-muted` on `surface-sunken`        | 5.4   | 13.3 | 4.5      |
 | `text-muted` on `surface-raised`        | 6.0   | 9.2  | 4.5      |
 | `on-accent` on `accent`                 | 6.7   | 10.9 | 4.5      |
 | `accent` (text/link) on `surface`       | 6.9   | 9.5  | 4.5      |
@@ -163,7 +163,8 @@ and remains visible in `forced-colors` mode (where it maps to `Highlight`). Focu
 | `easing-standard` | `cubic-bezier(0.2, 0, 0, 1)`      |
 | `easing-exit`     | `cubic-bezier(0.4, 0, 1, 1)`      |
 
-Under `prefers-reduced-motion: reduce`, durations resolve to 0ms and only opacity changes remain.
+Under `prefers-reduced-motion: reduce`, the duration tokens resolve to 0ms and components also set
+`transition: none`, so state changes are instant.
 
 ## Theming and dark mode
 

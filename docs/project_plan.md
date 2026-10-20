@@ -432,7 +432,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
 
 0. **Plan and cleanup** (this document; update `CLAUDE.md`, agents and skills for Lit/CSS-token
    conventions once the plan is approved).
-1. **Foundation spike**: pnpm / TS / ESLint / Prettier / Storybook (web-components-vite) /
+1. **Foundation spike** (done, §17): pnpm / TS / ESLint / Prettier / Storybook (web-components-vite) /
    Vitest Browser Mode; token files; design language doc; resolve the decorator question; build
    `su3-button` (all variants) end to end with story, test and docs.
 2. **Docker / compose / Makefile** (carry over and trim; no AWS targets).
@@ -519,3 +519,31 @@ and explain the reasoning in the PR description.
     fields), so the component test must cover each reflected attribute; private `#methods` show up
     in the manifest unless filtered.
   - `rs-module-lexer`'s install script is not needed by the analyzer and stays disabled.
+- **Phase 1 completed (2026-10-20)**: the vertical slice works end to end; `pnpm run ci` passes
+  (127 browser and convention tests, 98.6% statements, Storybook build, no a11y violations in 9
+  stories and two themes). Details: `docs/2026-10-20_01_phase1-foundation/`.
+  - Delivered: tooling; the Snowfield design language (`docs/design/design-language.md`); `ref` and
+    `sys` tokens with a generated `tokens.css` (light, dark, reduced motion) and contrast tests;
+    `FormAssociatedElement` and `FormSubmitterElement` base classes; `<su3-button>` (five variants,
+    three sizes, link mode, soft-disabled, form submit and reset); Storybook with manifest-driven
+    docs and a theme toolbar; two Vitest projects (`browser`, `conventions`).
+  - Decisions: one `<su3-button>` with a `variant` property rather than five elements; base classes
+    instead of mixins (§3); the class module is side-effect free and the component `index.ts`
+    registers it through `defineElement`, so `@tagname` is required in the JSDoc; the state layer
+    (label color over the container) is used for hover and press on every variant, so overriding
+    `--su3-comp-button-container-color` keeps the feedback; typeface, border width and focus-ring
+    sizes are system tokens, and a convention test forbids color, size and duration literals in
+    component styles.
+  - Review (`component-reviewer`) findings fixed: lost hover feedback on overridden container color,
+    direct use of a reference token, hard-coded sizes, unknown `type` not treated as `submit`,
+    manifest noise from static members, `dev` and `build-storybook` needing `custom-elements.json`.
+  - Known limits, documented in JSDoc: no `event.submitter` or `formaction`, not the form's default
+    button for Enter, `aria-labelledby` and `<label for>` on the host are not forwarded, and a
+    capture-phase `stopPropagation()` on an ancestor also stops the submit.
+  - Follow-ups carried to later phases: tests for `prefers-reduced-motion`, `forced-colors` and
+    `pointer: coarse` (needs media emulation, Phase 5 with the VRT); `--su3-comp-button-*` hooks for
+    the disabled colors; Space-key activation for link-mode buttons (decided against: links behave
+    as links); validity and reset/restore callbacks in `FormAssociatedElement` (Phase 7, with the
+    first real form control); `package.json` `exports` and publishing (Phase 4).
+  - `README_sample_from_another_repo.md` in the repository root is a leftover from the template
+    repository and should be moved out of the root or deleted by the owner.

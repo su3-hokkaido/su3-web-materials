@@ -22,6 +22,6 @@ Each item maps to one commit. Check items off as they complete.
 - [x] Port `src/conventions.test.ts` (Node and pnpm pins, unique titles, `Default` story)
 - [x] Add the `ci` script (format check, lint, typecheck, test, analyze, build-storybook) and make
       it pass
-- [ ] Review with the `component-reviewer` agent and fix findings
-- [ ] Record the decisions in `docs/project_plan.md` section 17 and update `CLAUDE.md` if any
+- [x] Review with the `component-reviewer` agent and fix findings
+- [x] Record the decisions in `docs/project_plan.md` section 17 and update `CLAUDE.md` if any
       convention changed

@@ -5,3 +5,8 @@ export {
   type ButtonSize,
   type ButtonVariant,
 } from './components/buttons/button/button.ts';
+export {
+  FormAssociatedElement,
+  FormSubmitterElement,
+  type FormSubmitterType,
+} from './behaviors/index.ts';

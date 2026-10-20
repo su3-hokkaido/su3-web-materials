@@ -5,6 +5,7 @@ import { buttonStyles } from './button.styles.ts';
 /** Emphasis levels, from the most to the least prominent. */
 export type ButtonVariant = 'filled' | 'tonal' | 'elevated' | 'outlined' | 'text';
 
+/** Control sizes: 32, 40 and 48px tall. */
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 /**
@@ -15,7 +16,13 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
  * for being unavailable must remain discoverable.
  *
  * Inside a form the button submits by default (`type="submit"`), like `<button>`. Set `type` to
- * `button` for plain actions or `reset` to reset the form.
+ * `button` for plain actions or `reset` to reset the form. See `FormSubmitterElement` for how this
+ * differs from a native submit button (no `event.submitter`, no `formaction`, not the default
+ * button for Enter).
+ *
+ * Accessible name: use the label slot, or `aria-label` on the host for an icon-only button. The
+ * host's `aria-label` is forwarded to the inner control; `aria-labelledby`, `<label for>` and other
+ * ARIA attributes on the host are not forwarded.
  *
  * @tagname su3-button
  * @summary A button that triggers an action, submits or resets a form, or navigates as a link.
@@ -42,6 +49,8 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
  * @cssprop [--su3-comp-button-font-weight] - Font weight.
  * @cssprop [--su3-comp-button-line-height] - Line height.
  * @cssprop [--su3-comp-button-focus-ring-color] - Focus indicator color.
+ * @cssprop [--su3-comp-button-focus-ring-width] - Focus indicator thickness.
+ * @cssprop [--su3-comp-button-focus-ring-offset] - Gap between the control and its focus indicator.
  */
 export class Su3Button extends FormSubmitterElement {
   static override styles = buttonStyles;
@@ -70,8 +79,9 @@ export class Su3Button extends FormSubmitterElement {
   declare size: ButtonSize;
 
   /**
-   * Disabled in appearance and behavior, but still focusable. Clicks are ignored and
-   * `aria-disabled` is exposed.
+   * Disabled in appearance and behavior, but still focusable. Activating the control does nothing
+   * and `aria-disabled` is exposed. Clicks dispatched on the host itself (`host.click()`) are not
+   * intercepted, but they never submit the form or follow the link.
    */
   declare softDisabled: boolean;
 
@@ -148,7 +158,11 @@ export class Su3Button extends FormSubmitterElement {
     </button>`;
   }
 
-  /** Swallows clicks while unavailable so neither listeners on the host nor links see them. */
+  /**
+   * Swallows clicks on the inner control while unavailable, so neither host listeners nor the link
+   * see them. Clicks dispatched on the host (`host.click()`) bypass this; the form action and the
+   * link are guarded separately (`canPerformFormAction`, the missing `href`).
+   */
   #onControlClick = (event: Event): void => {
     if (this.isDisabled || this.softDisabled) {
       event.preventDefault();

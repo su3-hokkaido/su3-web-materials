@@ -173,6 +173,38 @@ describe('sizes', () => {
   }
 });
 
+describe('state feedback', () => {
+  /** Opacity of the state layer, which paints the label color over the container. */
+  const stateLayerOpacity = (host: Su3Button): number =>
+    Number(getComputedStyle(control(host), '::before').opacity);
+
+  for (const variant of ['filled', 'tonal', 'elevated', 'outlined', 'text']) {
+    it(`${variant} shows a state layer on hover`, async () => {
+      const host = await render(`<su3-button variant="${variant}">Go</su3-button>`);
+      expect(stateLayerOpacity(host)).toBe(0);
+      await userEvent.hover(page.getByRole('button', { name: 'Go' }));
+      await expect.poll(() => stateLayerOpacity(host)).toBeCloseTo(0.08, 2);
+    });
+  }
+
+  it('still reacts to hover when the container color is overridden', async () => {
+    const host = await render(
+      '<su3-button style="--su3-comp-button-container-color: rgb(10, 20, 30)">Go</su3-button>',
+    );
+    expect(style(host).backgroundColor).toBe('rgb(10, 20, 30)');
+    await userEvent.hover(page.getByRole('button', { name: 'Go' }));
+    await expect.poll(() => stateLayerOpacity(host)).toBeCloseTo(0.08, 2);
+    expect(style(host).backgroundColor).toBe('rgb(10, 20, 30)');
+  });
+
+  it('does not react while disabled or soft-disabled', async () => {
+    const host = await render('<su3-button soft-disabled>Go</su3-button>');
+    await userEvent.hover(page.getByRole('button', { name: 'Go' }), { force: true });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(stateLayerOpacity(host)).toBe(0);
+  });
+});
+
 describe('theming', () => {
   it('lets a component token override the default', async () => {
     const host = await render(
@@ -396,6 +428,12 @@ describe('inside a form', () => {
     input.value = 'changed';
     await userEvent.click(page.getByRole('button', { name: 'Reset' }));
     await expect.poll(() => input.value).toBe('initial');
+  });
+
+  it('treats an unknown type as submit, like <button>', async () => {
+    const { submissions } = await renderForm('<su3-button type="bogus">Go</su3-button>');
+    await userEvent.click(page.getByRole('button', { name: 'Go' }));
+    await expect.poll(() => submissions.length).toBe(1);
   });
 
   it('does nothing for type button', async () => {

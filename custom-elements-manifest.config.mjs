@@ -1,8 +1,10 @@
 // @ts-check
 
+const hiddenStatics = new Set(['styles', 'properties', 'formAssociated', 'shadowRootOptions']);
+
 /**
- * Removes private (`#name`) and protected members from the manifest, so the docs list only the
- * public API.
+ * Removes private (`#name`) and protected members, and static plumbing (`styles`, `properties`,
+ * `formAssociated`, `shadowRootOptions`), from the manifest, so the docs list only the public API.
  * @type {import('@custom-elements-manifest/analyzer').Plugin}
  */
 const publicMembersOnly = {
@@ -14,6 +16,7 @@ const publicMembersOnly = {
         declaration.members = declaration.members.filter(
           (member) =>
             !member.name.startsWith('#') &&
+            !(member.static && hiddenStatics.has(member.name)) &&
             member.privacy !== 'private' &&
             member.privacy !== 'protected',
         );

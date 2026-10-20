@@ -1,8 +1,11 @@
 import { LitElement, type PropertyDeclarations } from 'lit';
 
 /**
- * Base class for form-associated custom elements: it attaches `ElementInternals`, exposes the
- * properties every form control shares and tracks `<fieldset disabled>`.
+ * Base class for form-associated custom elements: it attaches `ElementInternals`, exposes `disabled`,
+ * `name` and `value`, and tracks the disabled state reported by the browser (`<fieldset disabled>`).
+ *
+ * It does not yet provide validity or `formResetCallback`/`formStateRestoreCallback` handling; the
+ * first control that needs them (a checkbox or text field, Phase 7) adds them here.
  *
  * Base classes are used instead of mixins because every consumer so far fits one hierarchy
  * (`FormAssociatedElement` -> `FormSubmitterElement`), and class expressions would need explicit
@@ -28,7 +31,8 @@ export abstract class FormAssociatedElement extends LitElement {
   declare value: string;
 
   readonly #internals: ElementInternals;
-  #formDisabled = false;
+  /** The disabled state the browser reports: the `disabled` attribute or a disabled fieldset. */
+  #reportedDisabled = false;
 
   constructor() {
     super();
@@ -50,12 +54,12 @@ export abstract class FormAssociatedElement extends LitElement {
 
   /** True when disabled directly or through a disabled `<fieldset>` ancestor. */
   protected get isDisabled(): boolean {
-    return this.disabled || this.#formDisabled;
+    return this.disabled || this.#reportedDisabled;
   }
 
   /** Called by the browser when an ancestor `<fieldset>` changes the disabled state. */
   formDisabledCallback(disabled: boolean): void {
-    this.#formDisabled = disabled;
+    this.#reportedDisabled = disabled;
     this.requestUpdate();
   }
 }

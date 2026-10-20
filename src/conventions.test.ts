@@ -149,8 +149,11 @@ describe('component conventions', () => {
           /#[0-9a-fA-F]{3,8}\b|\b(?:rgb|rgba|hsl|hsla|oklch|oklab|lab|lch)\(/,
         );
         expect(css).not.toContain('!important');
-        // Only su3 tokens and private (--_) properties may be read.
+        // Only su3 tokens and private (--_) properties may be read, and never the reference layer.
         expect(css).not.toMatch(/var\(--(?!su3-|_)/);
+        expect(css, 'components read --su3-sys-* and --su3-comp-*').not.toContain('--su3-ref-');
+        // Sizes and durations come from tokens; zero is the only literal allowed.
+        expect(css).not.toMatch(/(?<![\w.-])[1-9]\d*(?:\.\d+)?(?:px|rem|em|ms|s)\b/);
       });
 
       it('has a {Category}/{Component} story title, a Default story and the manifest tag', () => {
@@ -200,6 +203,11 @@ describe('provenance (docs/project_plan.md section 1)', () => {
     expect(offenders.map((file) => relative(root, file))).toEqual([]);
   });
 
+  it('flags the capitalized word "Material" as well', () => {
+    const offenders = files.filter((file) => /\bMaterial\b/.test(readFileSync(file, 'utf8')));
+    expect(offenders.map((file) => relative(root, file))).toEqual([]);
+  });
+
   it('prefixes every custom element tag with su3-', () => {
     const tags = files.flatMap((file) =>
       [...readFileSync(file, 'utf8').matchAll(/defineElement\('([^']+)'/g)].map(
@@ -246,4 +254,19 @@ describe('toolchain pins', () => {
       expect(tag).toBe(packageJson.devDependencies?.['@playwright/test']);
     },
   );
+});
+
+describe('server-side import', () => {
+  // Plan section 13: importing a module must not throw without a browser.
+  it('imports the package root without touching a browser', async () => {
+    const root = await import('./shared/index.ts');
+    expect(root.Su3Button).toBeTypeOf('function');
+    expect(root.FormSubmitterElement).toBeTypeOf('function');
+  });
+
+  it('imports a component entry and the token helpers', async () => {
+    await expect(import('./shared/components/buttons/button/index.ts')).resolves.toBeDefined();
+    const tokens = await import('./shared/tokens/index.ts');
+    expect(tokens.tokensCss).toContain('--su3-sys-color-accent');
+  });
 });

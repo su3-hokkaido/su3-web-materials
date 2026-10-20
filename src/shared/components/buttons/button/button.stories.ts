@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html, nothing } from 'lit';
+import type { FormSubmitterType } from '../../../behaviors/index.ts';
 import type { ButtonSize, ButtonVariant } from './button.ts';
 import './index.ts';
 
@@ -10,7 +11,7 @@ interface ButtonArgs {
   disabled: boolean;
   softDisabled: boolean;
   href: string;
-  type: 'button' | 'submit' | 'reset';
+  type: FormSubmitterType;
 }
 
 const variants: readonly ButtonVariant[] = ['filled', 'tonal', 'elevated', 'outlined', 'text'];
@@ -44,7 +45,7 @@ const meta: Meta<ButtonArgs> = {
     disabled: false,
     softDisabled: false,
     href: '',
-    type: 'button',
+    type: 'submit',
   },
   render: ({ label, variant, size, disabled, softDisabled, href, type }) =>
     html`<su3-button

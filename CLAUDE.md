@@ -106,7 +106,9 @@ A new or changed component is done when:
   fast. For Cloudflare (Workers Static Assets, `_redirects`, wrangler), use the Cloudflare
   documentation search. Hosting is Workers Static Assets on the free plan; do not introduce paid
   services (no AWS Secrets Manager, no paid Cloudflare features).
-- Docker is the default environment. Run commands through `make` targets (`make help` lists them);
+- Until Phase 2 adds the Docker setup and the Makefile, run the pnpm scripts directly (`pnpm run ci`
+  is the same check as `make ci` will be). Afterwards Docker is the default environment: run commands
+  through `make` targets (`make help` lists them);
   `local-*` targets exist for running on the host.
 - GitHub Actions (`.github/workflows/`, `docs/project_plan.md` §8): CI runs `pnpm run ci` and the
   Docker VRT on every PR. Pin any new action to a full commit SHA with a `# vX.Y.Z` comment (Dependabot
@@ -153,7 +155,8 @@ cut from `develop`, and merged back into `develop` via PR. Per-task docs live un
    `git switch -c feature/...`).
 4. Implement; **update `task.md`** as items complete. Use **`/new-component`** to add components.
 5. If the change is user-visible in the published package, add a changeset (`make changeset`).
-6. Run `make format` and `make ci` before handing back. If `README.md` or `README_JA.md` changed,
+6. Run `make format` and `make ci` (`pnpm run format` and `pnpm run ci` until Phase 2) before
+   handing back. If `README.md` or `README_JA.md` changed,
    run the `readme-sync` agent.
 7. Have the `component-reviewer` subagent review the diff, then present it for the user to commit.
 

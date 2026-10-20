@@ -17,11 +17,9 @@ export const buttonStyles = css`
   .control {
     /* Defaults: the filled variant at the medium size. */
     --_container: ${sysVar('color-accent')};
-    --_container-hover: ${sysVar('color-accent-hover')};
-    --_container-active: ${sysVar('color-accent-active')};
     --_label: ${sysVar('color-on-accent')};
     --_border: transparent;
-    --_overlay: 0;
+    --_overlay: 1;
     --_elevation: ${sysVar('elevation-0')};
     --_elevation-hover: ${sysVar('elevation-0')};
     --_container-disabled: color-mix(
@@ -46,13 +44,13 @@ export const buttonStyles = css`
     margin: 0;
     padding-block: 0;
     padding-inline: ${compVar('button-padding-inline', 'var(--_padding)')};
-    border: ${compVar('button-border-width', '1px')} solid
+    border: ${compVar('button-border-width', sysVar('size-border-width'))} solid
       ${compVar('button-border-color', 'var(--_border)')};
     border-radius: ${compVar('button-container-shape', sysVar('shape-md'))};
     background-color: ${compVar('button-container-color', 'var(--_container)')};
     color: ${compVar('button-label-color', 'var(--_label)')};
     box-shadow: ${compVar('button-elevation', 'var(--_elevation)')};
-    font-family: ${compVar('button-font-family', 'var(--su3-ref-typeface-sans, system-ui, sans-serif)')};
+    font-family: ${compVar('button-font-family', sysVar('typeface-sans'))};
     font-size: ${compVar('button-font-size', 'var(--_font-size)')};
     font-weight: ${compVar('button-font-weight', sysVar('type-label-weight'))};
     line-height: ${compVar('button-line-height', 'var(--_line-height)')};
@@ -70,16 +68,12 @@ export const buttonStyles = css`
   /* Variants. Each one only changes the private defaults. */
   :host([variant='tonal']) .control {
     --_container: ${sysVar('color-accent-subtle')};
-    --_container-hover: ${sysVar('color-accent-subtle')};
-    --_container-active: ${sysVar('color-accent-subtle')};
     --_label: ${sysVar('color-on-accent-subtle')};
     --_overlay: 1;
   }
 
   :host([variant='outlined']) .control {
     --_container: transparent;
-    --_container-hover: transparent;
-    --_container-active: transparent;
     --_label: ${sysVar('color-accent')};
     --_border: ${sysVar('color-border-strong')};
     --_border-disabled: color-mix(
@@ -93,8 +87,6 @@ export const buttonStyles = css`
 
   :host([variant='text']) .control {
     --_container: transparent;
-    --_container-hover: transparent;
-    --_container-active: transparent;
     --_label: ${sysVar('color-accent')};
     --_container-disabled: transparent;
     --_overlay: 1;
@@ -102,8 +94,6 @@ export const buttonStyles = css`
 
   :host([variant='elevated']) .control {
     --_container: ${sysVar('color-surface-raised')};
-    --_container-hover: ${sysVar('color-surface-raised')};
-    --_container-active: ${sysVar('color-surface-raised')};
     --_label: ${sysVar('color-accent')};
     --_border: ${sysVar('color-elevation-edge')};
     --_elevation: ${sysVar('elevation-1')};
@@ -139,11 +129,12 @@ export const buttonStyles = css`
     height: ${compVar('button-icon-size', 'var(--_icon)')};
   }
 
-  /* State layer: the label color painted over the container. */
+  /* State layer: the label color painted over the container. Every variant uses it, so a container
+     color overridden with --su3-comp-button-container-color still reacts to hover and press. */
   .control::before {
     content: '';
     position: absolute;
-    inset: calc(-1 * ${compVar('button-border-width', '1px')});
+    inset: calc(-1 * ${compVar('button-border-width', sysVar('size-border-width'))});
     border-radius: inherit;
     background-color: currentcolor;
     opacity: 0;
@@ -162,7 +153,6 @@ export const buttonStyles = css`
   }
 
   .control:hover:not(:disabled, [aria-disabled='true']) {
-    background-color: ${compVar('button-container-color', 'var(--_container-hover)')};
     box-shadow: ${compVar('button-elevation', 'var(--_elevation-hover)')};
   }
 
@@ -174,18 +164,15 @@ export const buttonStyles = css`
     opacity: calc(var(--_overlay) * ${sysVar('state-focus-opacity')});
   }
 
-  .control:active:not(:disabled, [aria-disabled='true']) {
-    background-color: ${compVar('button-container-color', 'var(--_container-active)')};
-  }
-
   .control:active:not(:disabled, [aria-disabled='true'])::before {
     opacity: calc(var(--_overlay) * ${sysVar('state-pressed-opacity')});
   }
 
   /* Focus stays visible on soft-disabled buttons: they are meant to be reachable. */
   .control:focus-visible {
-    outline: 2px solid ${compVar('button-focus-ring-color', sysVar('color-focus-ring'))};
-    outline-offset: 2px;
+    outline: ${compVar('button-focus-ring-width', sysVar('size-focus-ring-width'))} solid
+      ${compVar('button-focus-ring-color', sysVar('color-focus-ring'))};
+    outline-offset: ${compVar('button-focus-ring-offset', sysVar('size-focus-ring-offset'))};
   }
 
   .control:disabled,
@@ -216,6 +203,11 @@ export const buttonStyles = css`
 
     .control:focus-visible {
       outline-color: Highlight;
+    }
+
+    /* The state layer is not visible in forced colors, so hovering changes the border instead. */
+    .control:hover:not(:disabled, [aria-disabled='true']) {
+      border-color: Highlight;
     }
 
     .control:disabled,

@@ -74,6 +74,9 @@ export const sysSize = {
   'icon-lg': '1.5rem',
   /** Minimum hit area on coarse pointers. */
   'hit-area': '2.75rem',
+  'border-width': '1px',
+  'focus-ring-width': '2px',
+  'focus-ring-offset': '2px',
 } as const;
 
 /** Type roles (`--su3-sys-type-{role}-{size|line-height|weight}`). */

@@ -109,7 +109,7 @@ generated at build time (Phase 4 wires the package output). Dark mode is driven 
 
 ## Provenance
 
-`su3-button` and the tokens are written from scratch. material-web was inspected for structure
+`su3-button` and the tokens are written from scratch (`src/conventions.test.ts` also scans `src` for material-web's names). material-web was inspected for structure
 only (separate public tag and internal implementation, token layering, form-associated behavior as
 a concept); no code, token names, values or text are reused. The design language is original.
 

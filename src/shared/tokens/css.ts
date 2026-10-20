@@ -36,6 +36,7 @@ type SysTokenName =
   | `shape-${keyof typeof sysShape}`
   | `space-${keyof typeof sysSpace}`
   | `size-${keyof typeof sysSize}`
+  | `typeface-${keyof typeof typeface}`
   | `type-${keyof typeof sysType}-${'size' | 'line-height' | 'weight'}`
   | `elevation-${keyof typeof sysElevation}`
   | `motion-${keyof typeof sysMotion}`
@@ -82,6 +83,12 @@ function buildEntries(): TokenEntry[] {
   const add = (name: string, value: string): void => {
     entries.push({ name, light: plain(value) });
   };
+  for (const [key, stack] of Object.entries(typeface)) {
+    entries.push({
+      name: `typeface-${key}`,
+      light: { ref: `var(${PREFIX}-ref-typeface-${key})`, literal: stack },
+    });
+  }
   for (const [key, value] of Object.entries(sysShape)) add(`shape-${key}`, value);
   for (const [key, value] of Object.entries(sysSpace)) add(`space-${key}`, value);
   for (const [key, value] of Object.entries(sysSize)) add(`size-${key}`, value);
