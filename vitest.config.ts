@@ -1,11 +1,12 @@
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
-// Component tests run in real Chromium so Shadow DOM, focus and ElementInternals behave as they do
-// for consumers (docs/project_plan.md section 11). jsdom is intentionally not used.
+// Two projects (docs/project_plan.md section 11):
+// - `browser`: component and token tests run in real Chromium so Shadow DOM, focus and
+//   ElementInternals behave as they do for consumers. jsdom is intentionally not used.
+// - `conventions`: mechanical repository checks that read files, so they need Node.
 export default defineConfig({
   test: {
-    include: ['src/**/*.test.ts'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
@@ -14,11 +15,27 @@ export default defineConfig({
       // suite grows rather than letting them drift down.
       thresholds: { statements: 95, branches: 90, functions: 95, lines: 95 },
     },
-    browser: {
-      enabled: true,
-      headless: true,
-      provider: playwright(),
-      instances: [{ browser: 'chromium' }],
-    },
+    projects: [
+      {
+        test: {
+          name: 'browser',
+          include: ['src/**/*.test.ts'],
+          exclude: ['src/conventions.test.ts'],
+          browser: {
+            enabled: true,
+            headless: true,
+            provider: playwright(),
+            instances: [{ browser: 'chromium' }],
+          },
+        },
+      },
+      {
+        test: {
+          name: 'conventions',
+          include: ['src/conventions.test.ts'],
+          environment: 'node',
+        },
+      },
+    ],
   },
 });

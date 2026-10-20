@@ -19,7 +19,7 @@ Each item maps to one commit. Check items off as they complete.
 - [x] Configure Vitest Browser Mode (`vitest.config.ts`) and install Chromium
 - [x] Write `button.test.ts` (variants, keyboard, click, disabled and soft-disabled, link mode,
       form submit and reset, events, parts)
-- [ ] Port `src/conventions.test.ts` (Node and pnpm pins, unique titles, `Default` story)
+- [x] Port `src/conventions.test.ts` (Node and pnpm pins, unique titles, `Default` story)
 - [ ] Add the `ci` script (format check, lint, typecheck, test, analyze, build-storybook) and make
       it pass
 - [ ] Review with the `component-reviewer` agent and fix findings

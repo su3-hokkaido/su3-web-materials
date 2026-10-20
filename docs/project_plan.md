@@ -344,7 +344,14 @@ ancestor, implemented by redefining `--su3-sys-color-*`. Switchable from the Sto
 - Each component test covers: rendering of each variant, attribute/property reflection, keyboard
   and pointer interaction, disabled / soft-disabled states, form participation (where applicable),
   events, and the documented CSS parts and slots.
-- Coverage thresholds are set in Phase 1 once the first component exists.
+- Vitest runs two projects: `browser` (component and token tests, real Chromium) and `conventions`
+  (`src/conventions.test.ts`, Node), which mechanically checks the rules in §3, §10 and §13: component
+  layout and naming, `@tagname`/summary/description JSDoc, registration only in the component's
+  `index.ts`, token-only styles (no color literals, no `!important`, only `--su3-*` variables),
+  story titles and `Default` stories, scope re-exports, `su3-` tags, the absence of material-web
+  names, and the Node.js pin.
+- Coverage thresholds (v8): 95% statements, lines and functions, 90% branches; raise them as the
+  suite grows.
 
 ### Visual regression (Playwright)
 
