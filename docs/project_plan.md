@@ -67,10 +67,10 @@ catalog and may grow into those components after the MVP (§14, Phase 9).
 | Visual regression test | Playwright `toHaveScreenshot`                               | Against the built Storybook, in Docker. See §11                                                                                                   |
 | Versioning             | Changesets                                                  | SemVer (MAJOR.MINOR.PATCH)                                                                                                                        |
 
-**Open (Phase 1)**: decorators. Lit supports TypeScript decorators, but Lit's publishing guide
-requires compiling them to standard ES2021 before publishing. Phase 1 compares
-(a) standard decorators and (b) no decorators (`static properties` + `customElements.define`) using
-the current Lit documentation, picks one, and records it in §17.
+**Decision (Phase 1)**: no decorators. Components use `static properties`, `declare`d fields whose
+defaults are assigned in the constructor, and a guarded `customElements.define`. The Phase 1 spike
+verified tsc, Vitest Browser Mode, Storybook docs and the custom elements manifest analyzer, and
+that importing the module in Node does not throw. See §17.
 
 ---
 
@@ -498,3 +498,15 @@ and explain the reasoning in the PR description.
     MVP scope and the post-MVP roadmap (§3, §4, §14).
   - Opened items: decorators (Phase 1), tsdown unbundled output and CSS handling (Phase 4),
     preview environment mechanism (Phase 6).
+- **Phase 1 spike (2026-10-20)**: decorators resolved as **none**.
+  - Why: Lit recommends experimental decorators only "for now", and standard decorators need the
+    `accessor` keyword plus compiler and bundler support that varies between tools. Decorator-free
+    code is plain ES2023, needs no publish-time transform and works with `erasableSyntaxOnly`.
+  - Verified: `tsc --noEmit` (strict); `cem analyze` reads types, defaults, descriptions, slots,
+    parts and events from `static properties`, `declare` fields and JSDoc; Vitest Browser Mode
+    queries inside the shadow root by role; the Storybook docs page renders the manifest tables;
+    `import` of the module in Node succeeds (Lit's DOM shim).
+  - Costs to keep in mind: property names appear twice (in `static properties` and as `declare`
+    fields), so the component test must cover each reflected attribute; private `#methods` show up
+    in the manifest unless filtered.
+  - `rs-module-lexer`'s install script is not needed by the analyzer and stays disabled.

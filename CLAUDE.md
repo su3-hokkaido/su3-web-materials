@@ -62,7 +62,9 @@ Summary of `docs/project_plan.md` §3, §4, §10 and §13:
 - After a visual change or a new story, run `make vrt-update` and review the changed baselines in
   `tests/vrt/__screenshots__/`; delete the baselines of removed or renamed stories, and of stories or viewports you exclude
   with `parameters.vrt` (the orphan check cannot see those).
-- Open decisions (decorators, tsdown output, preview mechanism) are listed in
+- No decorators (§2): use `static properties`, `declare`d fields initialised in the constructor,
+  and a guarded `customElements.define`. Open decisions (tsdown output, preview mechanism) are
+  listed in
   `docs/project_plan.md`; resolve them in the named phase and record them in §17.
 
 ## Component checklist
