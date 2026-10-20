@@ -1,0 +1,57 @@
+{
+  "name": "su3-web-materials",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Web Components catalog built with Lit and Storybook.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/su3-hokkaido/su3-web-materials.git"
+  },
+  "type": "module",
+  "packageManager": "pnpm@12.14.0",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=26 <27",
+      "onFail": "error"
+    }
+  },
+  "scripts": {
+    "dev": "storybook dev -p 5070",
+    "build-storybook": "storybook build",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "lit": "^3.3.3"
+  },
+  "devDependencies": {
+    "@custom-elements-manifest/analyzer": "0.11.0",
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.1",
+    "@storybook/addon-a11y": "10.6.2",
+    "@storybook/addon-docs": "10.6.2",
+    "@storybook/addon-themes": "10.6.2",
+    "@storybook/web-components-vite": "10.6.2",
+    "@types/node": "26.6.5",
+    "@vitest/browser-playwright": "5.0.5",
+    "@vitest/coverage-v8": "5.0.5",
+    "eslint": "10.12.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-import-resolver-typescript": "4.4.5",
+    "eslint-plugin-import-x": "4.17.1",
+    "eslint-plugin-storybook": "10.6.2",
+    "globals": "17.13.0",
+    "playwright": "1.64.1",
+    "prettier": "3.9.10",
+    "storybook": "10.6.2",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.2",
+    "vite": "8.3.4",
+    "vitest": "5.0.5"
+  }
+}
