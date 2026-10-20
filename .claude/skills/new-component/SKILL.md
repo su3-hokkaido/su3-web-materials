@@ -38,7 +38,8 @@ Derived values:
 3. Create the five files, following an existing component in the same scope as the model when one
    exists (the first one built in Phase 1 is the reference). Responsibilities:
    - `{name}.ts`: the `Su3{PascalName}` class extending `LitElement` (or a shared behavior mixin),
-     JSDoc (`@summary`, `@slot`, `@csspart`, `@cssprop`, `@fires`) and the `HTMLElementTagNameMap`
+     JSDoc (description as the body, then `@tagname su3-{name}`, `@summary`, `@slot`, `@csspart`,
+     `@cssprop`, `@fires`; an `@description` tag is ignored by the analyzer) and the `HTMLElementTagNameMap`
      declaration. No side effects: it must not call `customElements.define`. Follow the decorator decision recorded in
      `docs/project_plan.md` §17; confirm Lit APIs with Context7.
    - `{name}.styles.ts`: `css` template using `--su3-comp-{name}-*` with a `var()` fallback chain

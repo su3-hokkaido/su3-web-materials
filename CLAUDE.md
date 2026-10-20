@@ -50,8 +50,11 @@ Summary of `docs/project_plan.md` §3, §4, §10 and §13:
   tokens. Tokens have three layers: `--su3-ref-*`, `--su3-sys-*`, `--su3-comp-{name}-*`; a
   component reads `--su3-comp-*` with a `var()` fallback chain to `--su3-sys-*` and a built-in
   default. Support `prefers-reduced-motion` and `forced-colors`.
-- Document the public API with JSDoc (`@summary`, `@slot`, `@csspart`, `@cssprop`, `@fires`) so it
-  reaches `custom-elements.json` and the Storybook docs.
+- Document the public API with JSDoc so it reaches `custom-elements.json` and the Storybook docs:
+  the description is the JSDoc body (not an `@description` tag, which the analyzer ignores), plus
+  `@tagname su3-{name}` (required, because registration lives in `index.ts`), `@summary`, `@slot`,
+  `@csspart`, `@cssprop` and `@fires`. Private and protected members are filtered out of the
+  manifest by `custom-elements-manifest.config.mjs`.
 - Prefer native semantics (`ElementInternals`, `delegatesFocus`, real `<button>`/`<input>` in the
   shadow root); form controls are form-associated. No a11y addon violations.
 - Importing a module must not throw on the server and must not touch `document` or `customElements`

@@ -8,11 +8,6 @@ export type ButtonVariant = 'filled' | 'tonal' | 'elevated' | 'outlined' | 'text
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 /**
- * @tagname su3-button
- *
- * @summary A button that triggers an action, submits or resets a form, or navigates as a link.
- *
- * @description
  * Choose the variant by emphasis: `filled` for the single primary action on a screen, `tonal` and
  * `elevated` for secondary actions that need weight, `outlined` for medium emphasis and `text` for
  * the lowest. Setting `href` renders an anchor instead of a button. A `soft-disabled` button looks
@@ -21,6 +16,9 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
  *
  * Inside a form the button submits by default (`type="submit"`), like `<button>`. Set `type` to
  * `button` for plain actions or `reset` to reset the form.
+ *
+ * @tagname su3-button
+ * @summary A button that triggers an action, submits or resets a form, or navigates as a link.
  *
  * @slot - The label.
  * @slot leading - An icon shown before the label.
