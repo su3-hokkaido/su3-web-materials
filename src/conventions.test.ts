@@ -235,25 +235,41 @@ describe('toolchain pins', () => {
     expect(runtime?.version).toBe(`>=${nvmrc} <${String(Number(nvmrc) + 1)}`);
   });
 
-  // The Dockerfile arrives in Phase 2; these checks apply once it exists.
-  const dockerfile = existsSync(join(root, 'Dockerfile')) ? read(root, 'Dockerfile') : undefined;
+  const dockerfile = read(root, 'Dockerfile');
 
-  it.runIf(dockerfile !== undefined)('uses the pinned Node.js major in the Dockerfile', () => {
-    expect(/^ARG NODE_VERSION=(\S+)$/m.exec(dockerfile ?? '')?.[1]).toBe(
-      read(root, '.nvmrc').trim(),
-    );
+  it('uses the pinned Node.js major in the Dockerfile', () => {
+    expect(/^ARG NODE_VERSION=(\S+)$/m.exec(dockerfile)?.[1]).toBe(read(root, '.nvmrc').trim());
   });
 
-  it.runIf(dockerfile !== undefined)(
+  it('installs the Chromium for the tests at the playwright version from package.json', () => {
+    const { playwright, '@playwright/test': playwrightTest } = packageJson.devDependencies ?? {};
+    expect(playwright).toMatch(/^\d+\.\d+\.\d+$/);
+    // Vitest Browser Mode uses `playwright`, the VRT uses `@playwright/test`; they must not drift.
+    expect(playwrightTest).toBe(playwright);
+    // The Dockerfile reads the version from package.json instead of repeating it.
+    expect(dockerfile).toContain("require('/tmp/package.json').devDependencies.playwright");
+    expect(dockerfile).toContain('playwright install --with-deps chromium');
+    expect(dockerfile).toMatch(/^ENV PLAYWRIGHT_BROWSERS_PATH=\S+$/m);
+  });
+
+  // The VRT image is added in Phase 5; the check applies once a `vrt` stage exists.
+  it.runIf(/\bAS vrt$/m.test(dockerfile))(
     'runs the VRT in the Playwright image that matches @playwright/test',
     () => {
       const tag = /^FROM mcr\.microsoft\.com\/playwright:v(\S+?)-\S+ AS vrt$/m.exec(
-        dockerfile ?? '',
+        dockerfile,
       )?.[1];
       // Bump both together, or the browser build differs from the one the baselines came from.
       expect(tag).toBe(packageJson.devDependencies?.['@playwright/test']);
     },
   );
+
+  it('does not leave secrets or local env files in the build context', () => {
+    const ignore = read(root, '.dockerignore');
+    expect(ignore).toMatch(/^\.env$/m);
+    expect(ignore).toMatch(/^!\.env\.\*\.sample$/m);
+    expect(ignore).toMatch(/^node_modules$/m);
+  });
 });
 
 describe('server-side import', () => {
