@@ -1,0 +1,6 @@
+/*
+ * Theme of the `sample` product: the default look. It overrides nothing, so the catalog shows the
+ * tokens exactly as the package ships them. Copy this file to start another product theme and
+ * override `--su3-sys-*` (or `--su3-comp-*`) tokens here, using the same selectors as tokens.css.
+ * Load it after tokens.css so that equal-specificity rules win by source order.
+ */

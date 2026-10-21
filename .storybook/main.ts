@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { StorybookConfig } from '@storybook/web-components-vite';
+import { mergeConfig } from 'vite';
 
 const DEFAULT_PRODUCT_ID = 'sample';
 
@@ -11,6 +12,7 @@ const DEFAULT_PRODUCT_ID = 'sample';
 const productId = process.env.PRODUCT_ID || DEFAULT_PRODUCT_ID;
 const productDir = resolve(import.meta.dirname, '../src/products', productId);
 const hasProduct = existsSync(productDir);
+const productTheme = resolve(productDir, 'theme.css');
 
 // Products are introduced in Phase 3. Until then the default product (which the Docker setup always
 // passes) may not exist and only the shared stories are shown. Any other product that does not
@@ -33,6 +35,18 @@ const config: StorybookConfig = {
     name: '@storybook/web-components-vite',
     options: {},
   },
+  // `.storybook/preview.ts` imports `@product-theme`, which is the selected product's theme.css
+  // (token overrides, docs/project_plan.md section 4) or an empty stylesheet.
+  viteFinal: (viteConfig) =>
+    mergeConfig(viteConfig, {
+      resolve: {
+        alias: {
+          '@product-theme': existsSync(productTheme)
+            ? productTheme
+            : resolve(import.meta.dirname, 'empty-theme.css'),
+        },
+      },
+    }),
 };
 
 export default config;

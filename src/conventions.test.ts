@@ -6,6 +6,9 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { declaredProperties, themeColorOverrides } from '../scripts/lib/theme-css.ts';
+import { findContrastFailures, resolveColorRoles } from './shared/tokens/contrast.ts';
+import { sysTokenEntries } from './shared/tokens/css.ts';
 
 const root = process.cwd();
 const srcDir = resolve(root, 'src');
@@ -187,6 +190,49 @@ describe('component conventions', () => {
       expect(product).toMatch(kebab);
     },
   );
+});
+
+describe('products', () => {
+  it('has the sample product and a contrasting one', () => {
+    expect(products).toContain('sample');
+    expect(products.length).toBeGreaterThanOrEqual(2);
+  });
+
+  describe.each(products)('product "%s"', (product) => {
+    const dir = join(productsDir, product);
+    const themeFile = join(dir, 'theme.css');
+
+    it('has an index.ts and a theme.css, so every product has the same layout', () => {
+      expect(existsSync(join(dir, 'index.ts'))).toBe(true);
+      expect(existsSync(themeFile)).toBe(true);
+    });
+
+    it('declares only known --su3-sys-* tokens and --su3-comp-* hooks', () => {
+      const knownSys = new Set(sysTokenEntries.map((entry) => `--su3-sys-${entry.name}`));
+      for (const property of declaredProperties(read(themeFile))) {
+        expect(property.startsWith('--su3-comp-') || knownSys.has(property), property).toBe(true);
+      }
+    });
+
+    describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
+      const overrides = themeColorOverrides(read(themeFile))[mode];
+
+      it('uses plain #rrggbb for color roles, so the contrast test can read them', () => {
+        for (const [role, value] of Object.entries(overrides)) {
+          expect(value, role).toMatch(/^#[0-9a-f]{6}$/);
+        }
+      });
+
+      it('keeps every contrast pair above its minimum (4.5:1 text, 3:1 non-text)', () => {
+        expect(findContrastFailures(resolveColorRoles(mode, overrides))).toEqual([]);
+      });
+    });
+
+    it('declares the same dark colors for the attribute and for the OS preference', () => {
+      const { dark, darkPreference } = themeColorOverrides(read(themeFile));
+      expect(darkPreference).toEqual(dark);
+    });
+  });
 });
 
 describe('provenance (docs/project_plan.md section 1)', () => {
