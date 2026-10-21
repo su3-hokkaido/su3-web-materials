@@ -6,6 +6,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { PORTAL_PLACEHOLDER } from '../scripts/lib/storybook-site.ts';
 import { declaredProperties, themeColorOverrides } from '../scripts/lib/theme-css.ts';
 import { findContrastFailures, resolveColorRoles } from './shared/tokens/contrast.ts';
 import { sysTokenEntries } from './shared/tokens/css.ts';
@@ -232,6 +233,101 @@ describe('products', () => {
       const { dark, darkPreference } = themeColorOverrides(read(themeFile));
       expect(darkPreference).toEqual(dark);
     });
+  });
+});
+
+/** Parses a `_redirects` file into [from, to, status] rules, ignoring comments and blank lines. */
+function readRedirectRules(content: string): [string, string, string][] {
+  return content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '' && !line.startsWith('#'))
+    .map((line) => {
+      const [from = '', to = '', status = ''] = line.split(/\s+/);
+      return [from, to, status];
+    });
+}
+
+describe('site delivery (docs/project_plan.md section 4)', () => {
+  const redirects = readRedirectRules(read(root, 'deploy/cloudflare/_redirects'));
+  const nginx = read(root, 'deploy/local/nginx.conf');
+
+  it('redirects /{productId}/c/{category}/{component} to the Default story, with or without a slash', () => {
+    const target = '/:productId/?path=/story/:category-:component--default';
+    expect(redirects).toEqual([
+      ['/:productId/c/:category/:component', target, '302'],
+      ['/:productId/c/:category/:component/', target, '302'],
+    ]);
+  });
+
+  it('keeps the nginx rule equivalent to the Cloudflare rule', () => {
+    const location =
+      /location ~ \^\/\(([^)]+)\)\/c\/\(([^)]+)\)\/\(([^)]+)\)\/\?\$ \{\s*return (\d+) (\S+);/.exec(
+        nginx,
+      );
+    expect(location, 'nginx.conf needs the clean-URL location').not.toBeNull();
+    const [, product, category, component, status, target] = location ?? [];
+    // The three captures only accept the characters of sanitized ids (see the file's comment).
+    for (const capture of [product, category, component]) expect(capture).toBe('[a-z0-9-]+');
+
+    const [first] = redirects;
+    const translated = (first?.[1] ?? '')
+      .replace(':productId', '$1')
+      .replace(':category', '$2')
+      .replace(':component', '$3');
+    expect(target).toBe(translated);
+    expect(status).toBe(first?.[2]);
+  });
+
+  it('does not serve the _redirects file from nginx, like Cloudflare', () => {
+    expect(nginx).toMatch(/location = \/_redirects \{\s*return 404;/);
+  });
+
+  it('serves the built site as static assets from dist/storybook, without a Worker script', () => {
+    // JSONC as Prettier writes it: full-line comments and trailing commas.
+    const config = JSON.parse(
+      read(root, 'deploy/cloudflare/wrangler.jsonc')
+        .replace(/^\s*\/\/.*$/gm, '')
+        .replace(/,(\s*[}\]])/g, '$1'),
+    ) as {
+      name?: string;
+      main?: string;
+      compatibility_date?: string;
+      assets?: { directory?: string; binding?: string };
+    };
+    expect(config.name).toBeTruthy();
+    expect(config.compatibility_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(config.main).toBeUndefined();
+    expect(config.assets?.binding).toBeUndefined();
+    expect(resolve(root, 'deploy/cloudflare', config.assets?.directory ?? '')).toBe(
+      resolve(root, 'dist/storybook'),
+    );
+  });
+
+  it('has a portal template with the marker the build script fills in', () => {
+    const portal = read(root, 'portal/index.html');
+    expect(portal).toContain(PORTAL_PLACEHOLDER);
+    expect(portal).toMatch(/<html lang="en">/);
+    expect(portal).toMatch(/<title>[^<]+<\/title>/);
+  });
+
+  it('builds every product through build-storybook:all, after generating the manifest, in ci', () => {
+    const { scripts } = JSON.parse(read(root, 'package.json')) as {
+      scripts: Record<string, string>;
+    };
+    expect(scripts['build-storybook:all']).toMatch(
+      /^pnpm run analyze && node scripts\/build-storybook-all\.ts$/,
+    );
+    expect(scripts['ci']).toMatch(/^pnpm run analyze && /);
+    expect(scripts['ci']).toContain('pnpm run build-storybook:all');
+  });
+
+  it('ends the Dockerfile with the nginx preview stage, so an untargeted build produces it', () => {
+    const dockerfile = read(root, 'Dockerfile');
+    const stages = [...dockerfile.matchAll(/^FROM \S+ AS (\S+)$/gm)].map((match) => match[1]);
+    expect(stages).toEqual(['base', 'dev', 'build', 'preview']);
+    expect(dockerfile).toContain('COPY deploy/local/nginx.conf /etc/nginx/conf.d/default.conf');
+    expect(read(root, 'compose.yaml')).toMatch(/preview:[\s\S]*profiles: \[preview\]/);
   });
 });
 

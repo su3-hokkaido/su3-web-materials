@@ -145,8 +145,12 @@ provided by redirects with a fixed `c` segment:
    ```
    /:productId/c/:category/:component  /:productId/?path=/story/:category-:component--default  302
    ```
-   Verify the placeholder expansion (`:category-:component`) with `wrangler dev` first and with a
-   real preview deploy before marking §15 complete.
+   The placeholder expansion (`:category-:component`) was **verified in Phase 3** with
+   `wrangler dev` (the Workers runtime), including a hyphenated category, the variant with a
+   trailing slash and a real browser walk-through; the real preview deploy is still to be checked
+   in Phase 6 before §15 is marked complete. Cloudflare's `html_handling: auto-trailing-slash`
+   redirects `/sample/iframe.html` to `/sample/iframe` (query string preserved); nginx serves the
+   file directly. Both end up at the same page.
 5. Local (Docker): `deploy/local/nginx.conf` serves the production build with an equivalent rule.
 6. `make dev` (Storybook dev server with HMR) targets a single productId and uses native
    Storybook URLs. Clean URLs are checked with `make preview`.
@@ -166,12 +170,15 @@ keeps working but receives no new features, and a Pages migration guide exists. 
 requests are free and unlimited on the Free plan. `_redirects` and `_headers` are supported by
 Workers Static Assets, so the clean-URL design is unchanged.
 
-- Use **Workers Static Assets** (`wrangler.jsonc` with `assets.directory`; no Worker script).
+- Use **Workers Static Assets** (`deploy/cloudflare/wrangler.jsonc` with `assets.directory`; no
+  Worker script, no `main`, no `binding`). `compatibility_date` is the day the file was written and
+  must not be newer than the pinned `wrangler`'s workerd supports (`wrangler@4.151.1` rejected
+  2026-10-21, `4.151.3` accepts it).
 - Free plan limits that matter (re-check before each phase that changes output size): **20,000
-  files per Worker version**, **25 MiB per file**, 2,000 static + 100 dynamic redirects. Because
-  every productId is built separately and Storybook emits many small files, **measure the file
-  count in Phase 3** and, if the limit is near, reduce it (fewer products, `--test` builds, or no
-  duplicated shared assets).
+  files per Worker version**, **25 MiB per file**, 2,000 static + 100 dynamic redirects. **Measured in
+  Phase 3**: two products plus the portal are 96 files and 16.2 MiB (largest file 3.2 MiB), with 2
+  dynamic redirect rules, so the limits are not a practical concern. `scripts/build-storybook-all.ts`
+  still checks them on every build (warning above 75% of the file limit, failure above any limit).
 - Environments: `main` -> production Worker; `develop` -> a separate preview Worker (or a Worker
   preview/version URL). **Open (Phase 6)**: pick between a second Worker and Worker Previews after
   reading the current Cloudflare docs.
@@ -447,8 +454,8 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
    Vitest Browser Mode; token files; design language doc; resolve the decorator question; build
    `su3-button` (all variants) end to end with story, test and docs.
 2. **Docker / compose / Makefile** (done, §17): carried over and trimmed; no AWS targets.
-3. **Per-productId builds, portal, URL rewrite** (nginx and Cloudflare `_redirects`), `sample` and
-   one contrasting product; measure the file count against the 20,000-file limit.
+3. **Per-productId builds, portal, URL rewrite** (done, §17): nginx and Cloudflare `_redirects`,
+   `sample` and `acme`; file count measured against the 20,000-file limit.
 4. **Package build**: tsdown per-component entries, `exports`, `custom-elements.json`,
    `make new-product`, and consumer proofs of concept (plain HTML, Vite, React 19, Vue).
 5. **Playwright VRT** (Docker, baselines).
@@ -461,21 +468,24 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
 
 ## 15. Acceptance Criteria
 
-- [ ] On a clean machine, `make setup && make dev` alone opens Storybook at http://localhost:5070
-- [ ] `make preview` shows the matching story at `http://localhost:5071/sample/c/buttons/button`,
-      and Storybook's own assets under `/sample/` load without being redirected
+- [x] On a clean machine, `make setup && make dev` alone opens Storybook at http://localhost:5070
+      (Phase 2)
+- [x] `make preview` shows the matching story at `http://localhost:5071/sample/c/buttons/button`,
+      and Storybook's own assets under `/sample/` load without being redirected (Phase 3)
 - [ ] `make test` runs the component tests in a real browser, locally and in CI, with the same result
 - [ ] `make vrt` gives the same result locally (Docker) and in CI, and new stories are included
       automatically
 - [ ] On Cloudflare Workers Static Assets, `/{productId}/c/{category}/{component}` works, and the
-      build stays under the Free plan limits
+      build stays under the Free plan limits (verified with `wrangler dev` and the limit check in
+      Phase 3; the real preview deploy remains, Phase 6)
 - [ ] `make ci` succeeds, and CI runs the same checks
 - [ ] Pushes to `develop` / `main` deploy automatically; the whole pipeline costs nothing
 - [ ] Merging a PR with a changeset results in a tag, a Release, an npm publish and a back-merge PR
 - [ ] A fork with no secrets passes CI and skips deploy / publish instead of failing
 - [ ] `import 'su3-web-materials/button.js'` registers `<su3-button>` in a plain HTML page, a Vite
       app, a React 19 app and a Vue app, with working styles
-- [ ] Re-theming by overriding `--su3-sys-*` works, and the contrasting product demonstrates it
+- [x] Re-theming by overriding `--su3-sys-*` works, and the contrasting product demonstrates it
+      (`acme`, Phase 3)
 - [ ] `custom-elements.json` is published and the Storybook docs are generated from it
 - [ ] No source, token or documentation text from material-web is present; `THIRD_PARTY_NOTICES.md`
       lists every bundled font/icon and its license
@@ -575,3 +585,25 @@ and explain the reasoning in the PR description.
     unavailable: git is not available" in the container (harmless; `.git` is not in the image);
     pnpm's store setting makes npm print an unknown-config warning during the image build
     (harmless).
+- **Phase 3 completed (2026-10-21)**: per-product builds, the portal and the clean URLs work in
+  Docker, in nginx and in the Workers runtime. Details: `docs/2026-10-21_02_phase3-product-builds/`.
+  - Delivered: products `sample` (the default look) and `acme` (violet accent, pill buttons, rounded
+    font) with a `theme.css` each; the `@product-theme` alias in Storybook; `scripts/build-storybook-all.ts`
+    with `scripts/lib` (product ids, clean URLs, portal, hosting limits, a theme CSS reader);
+    `portal/index.html`; `deploy/cloudflare/_redirects` and `wrangler.jsonc`; `deploy/local/nginx.conf`;
+    Dockerfile `build` and `preview` stages, the compose `preview` service, `make preview`;
+    `make build-storybook` now builds every product.
+  - Verified: a real browser follows `/{productId}/c/buttons/button` to the Storybook UI and the
+    preview iframe shows the product's accent (`#006071` and `#693996`), through `make preview` (nginx)
+    and `wrangler dev` (Workers runtime); `/sample` redirects to `/sample/`; assets and `iframe.html`
+    are not redirected; `/_redirects` is 404 in both; edge cases (unknown product, wrong depth) behave
+    the same; `make dev PRODUCT_ID=acme` serves the acme theme; an unknown `PRODUCT_ID` fails the
+    build; `make ci` and `make local-ci` pass (197 tests).
+  - Decisions: a product theme overrides only `--su3-sys-*` and `--su3-comp-*` tokens in plain
+    `#rrggbb` colors and must meet the contrast thresholds, which `src/conventions.test.ts`
+    enforces for every product; the default token stylesheet is prepended so a product theme wins by
+    source order (consumers load `tokens.css` first, then the theme); a product without stories adds
+    no story pattern; wrangler is pinned to 4.151.3 (see §4); `make new-product` stays in Phase 4
+    because it writes the package `exports`.
+  - Notes: the Workers runtime adds a redirect hop for `iframe.html` (§4); `wrangler dev` needs no
+    login for assets-only sites; `.dockerignore` keeps the build context free of env files.

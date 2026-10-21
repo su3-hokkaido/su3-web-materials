@@ -12,8 +12,8 @@ Each item maps to one commit. Check items off as they complete.
       placeholder expansion with `wrangler dev`
 - [x] Add `deploy/local/nginx.conf`, the Dockerfile `build` and `preview` stages, the compose
       `preview` service and the Makefile targets
-- [ ] Extend `src/conventions.test.ts` (products, redirect rule parity, wrangler config, portal)
-- [ ] Verify end to end (`make preview`, `make ci`, `make local-ci`, `wrangler dev`, size report) and
+- [x] Extend `src/conventions.test.ts` (products, redirect rule parity, wrangler config, portal)
+- [x] Verify end to end (`make preview`, `make ci`, `make local-ci`, `wrangler dev`, size report) and
       fix findings
-- [ ] Record the decisions in `docs/project_plan.md` sections 4, 14, 15 and 17 and update
+- [x] Record the decisions in `docs/project_plan.md` sections 4, 14, 15 and 17 and update
       `CLAUDE.md`

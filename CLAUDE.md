@@ -61,6 +61,13 @@ Summary of `docs/project_plan.md` §3, §4, §10 and §13:
   (registration lives in the component's `index.ts`, through the guarded `defineElement`).
 - Dependency direction: products may import `shared`; `shared` never imports products; products
   never import each other.
+- A product (`src/products/{productId}/`) is a themed demo: `index.ts` plus `theme.css`. The theme
+  overrides only `--su3-sys-*` and `--su3-comp-*` tokens with the same selectors as `tokens.css`,
+  colors as plain `#rrggbb`, and must keep the contrast thresholds (checked for every product by
+  `src/conventions.test.ts`). `make build-storybook` builds every product into
+  `dist/storybook/{productId}/`; `make preview` serves it at http://localhost:5071; clean URLs are
+  `/{productId}/c/{category}/{component}` (`deploy/cloudflare/_redirects` and
+  `deploy/local/nginx.conf` must stay equivalent, which the conventions test checks).
 - Optional per-story VRT settings go in `parameters.vrt`:
   `{ disable?: boolean; viewports?: ('desktop' | 'mobile')[] }` (validated by `tests/vrt/stories.ts`).
 - After a visual change or a new story, run `make vrt-update` and review the changed baselines in
