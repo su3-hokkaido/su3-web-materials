@@ -46,6 +46,8 @@ export default defineConfig(
     'test-results',
     'playwright-report',
     'custom-elements.json',
+    // Separate projects with their own dependencies (tests/consumers/README.md).
+    'tests/consumers',
     '.wrangler',
   ]),
   js.configs.recommended,

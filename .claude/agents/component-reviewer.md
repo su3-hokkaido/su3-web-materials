@@ -41,7 +41,9 @@ findings, do not edit files. The specification is `docs/project_plan.md` (ยง1, ย
   `index.ts`.
 - Re-exported from the scope's `index.ts` directly from `{name}.ts` (classes and types only, no
   registration side effects)
-  and covered by the matching `package.json` `exports` entry (`./{name}.js`, `./{productId}`).
+  and covered by the matching `package.json` `exports` entry (`./{name}.js`, `./{productId}`),
+  which is derived (`pnpm run sync:exports`); shared components are also imported in
+  `src/shared/all.ts`.
 
 **5. Stories and tests.**
 - Story `title` is `{Category}/{Component}` with no productId and not already used (search for

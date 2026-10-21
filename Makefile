@@ -87,8 +87,29 @@ analyze: ## Regenerate custom-elements.json from the component sources
 build-storybook: ## Build dist/storybook: every product (or only PRODUCT_ID) and the portal
 	$(RUN) pnpm run build-storybook:all $(PRODUCT_ID)
 
+.PHONY: build
+build: ## Build the npm package into dist (JavaScript, types, tokens.css, themes, manifest)
+	$(RUN) pnpm run build
+
+.PHONY: check-package
+check-package: ## Check the built package (exports, side effects, tokens, manifest, publint, attw)
+	$(RUN) pnpm run check:package
+
+.PHONY: check-consumers
+check-consumers: ## Install the packed package into plain HTML, Vite, React 19 and Vue fixtures and test them (network)
+	$(RUN) pnpm run check:consumers
+
+.PHONY: sync-exports
+sync-exports: ## Rewrite package.json exports from the components and products
+	$(RUN) pnpm run sync:exports
+
+.PHONY: new-product
+new-product: ## Scaffold src/products/PRODUCT_ID and its package exports (PRODUCT_ID is required)
+	$(if $(PRODUCT_ID),,$(error PRODUCT_ID is required, e.g. make new-product PRODUCT_ID=acme-web))
+	$(RUN) pnpm run new-product '$(PRODUCT_ID)'
+
 .PHONY: ci
-ci: ## Run the CI checks (analyze, format check, lint, typecheck, tests, Storybook build)
+ci: ## Run the CI checks (analyze, format, lint, types, tests, package build and check, Storybook)
 	$(RUN) pnpm run ci
 
 .PHONY: clean
@@ -124,6 +145,23 @@ local-test: ## Run the tests with coverage on the host
 .PHONY: local-build-storybook
 local-build-storybook: ## Build dist/storybook (every product or only PRODUCT_ID) on the host
 	pnpm run build-storybook:all $(PRODUCT_ID)
+
+.PHONY: local-build
+local-build: ## Build the npm package into dist on the host
+	pnpm run build
+
+.PHONY: local-check-package
+local-check-package: ## Check the built package on the host
+	pnpm run check:package
+
+.PHONY: local-check-consumers
+local-check-consumers: ## Run the consumer fixtures on the host (network, Chromium)
+	pnpm run check:consumers
+
+.PHONY: local-new-product
+local-new-product: ## Scaffold src/products/PRODUCT_ID on the host (PRODUCT_ID is required)
+	$(if $(PRODUCT_ID),,$(error PRODUCT_ID is required, e.g. make local-new-product PRODUCT_ID=acme-web))
+	pnpm run new-product '$(PRODUCT_ID)'
 
 .PHONY: local-ci
 local-ci: ## Run the CI checks on the host

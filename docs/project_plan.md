@@ -49,23 +49,23 @@ catalog and may grow into those components after the MVP (§14, Phase 9).
 
 ## 2. Tech Stack
 
-| Category               | Tool                                                        | Notes                                                                                                                                             |
-| ---------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Hosting (source)       | GitHub                                                      | Public repository, Actions, Releases                                                                                                              |
-| Components             | Lit 3 + TypeScript                                          | `strict: true`. Shadow DOM, `ElementInternals` for form association. **Decision**: no framework other than Lit in the runtime                     |
-| Styling                | Plain CSS in `css` tagged templates + CSS custom properties | Three token layers (§10). No Tailwind, no Sass, no preflight concerns: Shadow DOM isolates styles                                                 |
-| Catalog                | Storybook (`@storybook/web-components-vite`)                | **Decision**: Storybook is kept as the catalog engine. Docs are generated from `custom-elements.json`                                             |
-| Package manager        | pnpm                                                        | Pinned with the `packageManager` field. The Dockerfile installs that exact version with npm (Node.js 25+ no longer bundles Corepack)              |
-| Runtime                | Node.js                                                     | **26** (owner decision; Active LTS from late October 2026), pinned in `.nvmrc` and `devEngines`                                                   |
-| Language               | TypeScript                                                  | 6.0.x until typescript-eslint and Storybook's tooling support TypeScript 7                                                                        |
-| Unit / behavior test   | Vitest **Browser Mode** (Playwright provider)               | Real Chromium, so Shadow DOM, focus, `ElementInternals` and forms behave as in production. jsdom is not used. See §11                             |
-| Lint / Format          | ESLint (flat config) + Prettier                             | `eslint-plugin-lit` and `eslint-plugin-wc` are added if they support the ESLint major in use; otherwise rely on tests and the a11y addon          |
-| Library build          | tsdown (Rolldown based)                                     | ESM only, one entry per component (tree-shakable), `.d.ts`, `custom-elements.json`. **Open (Phase 4)**: confirm unbundled output and CSS handling |
-| Container              | Dockerfile + docker compose                                 | Local development assumes Docker (§5)                                                                                                             |
-| Task runner            | Makefile                                                    | Single entry point for every command                                                                                                              |
-| Deploy                 | **Cloudflare Workers Static Assets**                        | **Decision (revised)**: see §4                                                                                                                    |
-| Visual regression test | Playwright `toHaveScreenshot`                               | Against the built Storybook, in Docker. See §11                                                                                                   |
-| Versioning             | Changesets                                                  | SemVer (MAJOR.MINOR.PATCH)                                                                                                                        |
+| Category               | Tool                                                        | Notes                                                                                                                                                       |
+| ---------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hosting (source)       | GitHub                                                      | Public repository, Actions, Releases                                                                                                                        |
+| Components             | Lit 3 + TypeScript                                          | `strict: true`. Shadow DOM, `ElementInternals` for form association. **Decision**: no framework other than Lit in the runtime                               |
+| Styling                | Plain CSS in `css` tagged templates + CSS custom properties | Three token layers (§10). No Tailwind, no Sass, no preflight concerns: Shadow DOM isolates styles                                                           |
+| Catalog                | Storybook (`@storybook/web-components-vite`)                | **Decision**: Storybook is kept as the catalog engine. Docs are generated from `custom-elements.json`                                                       |
+| Package manager        | pnpm                                                        | Pinned with the `packageManager` field. The Dockerfile installs that exact version with npm (Node.js 25+ no longer bundles Corepack)                        |
+| Runtime                | Node.js                                                     | **26** (owner decision; Active LTS from late October 2026), pinned in `.nvmrc` and `devEngines`                                                             |
+| Language               | TypeScript                                                  | 6.0.x until typescript-eslint and Storybook's tooling support TypeScript 7                                                                                  |
+| Unit / behavior test   | Vitest **Browser Mode** (Playwright provider)               | Real Chromium, so Shadow DOM, focus, `ElementInternals` and forms behave as in production. jsdom is not used. See §11                                       |
+| Lint / Format          | ESLint (flat config) + Prettier                             | `eslint-plugin-lit` and `eslint-plugin-wc` are added if they support the ESLint major in use; otherwise rely on tests and the a11y addon                    |
+| Library build          | tsdown (Rolldown based)                                     | ESM only and **unbundled** (`dist` mirrors `src`), `.d.ts`, `custom-elements.json`; standalone CSS comes from a post-build script (§9, resolved in Phase 4) |
+| Container              | Dockerfile + docker compose                                 | Local development assumes Docker (§5)                                                                                                                       |
+| Task runner            | Makefile                                                    | Single entry point for every command                                                                                                                        |
+| Deploy                 | **Cloudflare Workers Static Assets**                        | **Decision (revised)**: see §4                                                                                                                              |
+| Visual regression test | Playwright `toHaveScreenshot`                               | Against the built Storybook, in Docker. See §11                                                                                                             |
+| Versioning             | Changesets                                                  | SemVer (MAJOR.MINOR.PATCH)                                                                                                                                  |
 
 **Decision (Phase 1)**: no decorators. Components use `static properties`, `declare`d fields whose
 defaults are assigned in the constructor, and a guarded `customElements.define`. The Phase 1 spike
@@ -285,7 +285,9 @@ follow in Phases 3 to 6). The Makefile must work with GNU make 3.81, the macOS d
 
 - Package name: **`su3-web-materials`** (unscoped). Confirm on npm that the name is unused before
   the first publish.
-- `package.json` `exports` (all ESM, each with `types`):
+- `package.json` `exports` (ESM only; each JavaScript entry is `{ types, default }`), **derived from
+  the directory layout by `scripts/lib/package-exports.ts`** and rewritten by
+  `pnpm run sync:exports` (`make sync-exports`); a convention test fails when it is stale:
   - `.` -> classes and types only (no registration side effects)
   - `./all.js` -> registers every shared component
   - `./{name}.js` -> one entry per component, registering its element (e.g. `./button.js`)
@@ -295,12 +297,32 @@ follow in Phases 3 to 6). The Makefile must work with GNU make 3.81, the macOS d
   - `./custom-elements.json` -> manifest (also referenced by the `customElements` field)
 - Components inject their own styles in Shadow DOM, so **no global stylesheet is required**
   except `tokens.css` (defaults). Components also fall back to built-in default values, so a
-  consumer who skips `tokens.css` still gets a usable, unthemed result.
+  consumer who skips `tokens.css` still gets a usable, unthemed result. Load `tokens.css` first,
+  then a product theme (`themes/{productId}.css`): equal-specificity rules win by source order.
 - `lit` is a `dependency` (Lit's own guidance for component packages), with a permissive range
-  (`^3`) so consumers can dedupe. Components are published as standard ES2021 JavaScript.
-- Entry wiring: `tsdown.config.ts` derives entries from the component directories;
-  `make new-product` writes the product entry; `make ci` fails if a component or product directory
-  has no matching `exports` entry.
+  (`^3`) so consumers can dedupe. **Decision (Phase 4)**: components are published as standard
+  **ES2022** JavaScript (the code uses private `#fields`, which every evergreen browser supports;
+  ES2021 would only add helper code).
+- **Build (Phase 4)**: `pnpm run build` = `analyze`, `tsdown`, `scripts/build-package-assets.ts`.
+  tsdown runs unbundled (`unbundle: true`, glob entries, ESM, `.js` and `.d.ts`), so
+  `dist/shared/components/buttons/button/button.js` mirrors its source, which keeps the side-effect
+  boundary (class modules are pure; each component's `index.js` registers) and lets the manifest map
+  `src/*.ts` to `dist/*.js` one to one. Standalone CSS is not bundled: `dist/tokens.css` is
+  `buildTokensCss()` and `dist/themes/{id}.css` is each product's `theme.css`.
+  `dist/custom-elements.json` is the analyzer output with module paths rewritten into `dist`.
+  Pitfall found and fixed: the `sideEffects` field of `package.json` also applied to the _source_
+  modules during the build and silently emptied `all.js`; the build therefore sets
+  `treeshake.moduleSideEffects` to always true.
+- Package fields: `files` (`dist`, not `dist/storybook`), `sideEffects` (the registering entries and
+  CSS), `types`, `customElements`, `publishConfig.access`; no `private` and no `engines`.
+- Checks: `pnpm run check:package` (`scripts/check-package.ts`: exports targets, no `.ts` specifiers,
+  pure class modules and registering entries, `tokens.css`, themes, manifest tags and paths, packed
+  file list, then `publint --strict` and `attw --profile esm-only`) is part of `make ci`;
+  `pnpm run check:consumers` (`make check-consumers`) installs the packed tarball into the plain
+  HTML, Vite, React 19 and Vue fixtures under `tests/consumers` and tests them in Chromium. It needs
+  network access and Chromium, so it is not part of `ci`; Phase 6 runs it as its own CI job.
+- `make new-product PRODUCT_ID=...` creates `src/products/{id}/index.ts` and `theme.css` and syncs
+  `exports`; name clashes with a component or a reserved id are rejected before anything is written.
 - Registries: **npmjs (public)** via npm Trusted Publishing (GitHub Actions OIDC, provenance), so no
   long-lived npm token is stored. A trusted publisher can only be configured for a package that
   exists, so the **first publish (0.0.0 from a clean checkout of `main`) is a one-time manual step
@@ -456,8 +478,9 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
 2. **Docker / compose / Makefile** (done, §17): carried over and trimmed; no AWS targets.
 3. **Per-productId builds, portal, URL rewrite** (done, §17): nginx and Cloudflare `_redirects`,
    `sample` and `acme`; file count measured against the 20,000-file limit.
-4. **Package build**: tsdown per-component entries, `exports`, `custom-elements.json`,
-   `make new-product`, and consumer proofs of concept (plain HTML, Vite, React 19, Vue).
+4. **Package build** (done, §17): unbundled tsdown output, derived `exports`, `tokens.css`, themes,
+   `custom-elements.json`, `make new-product`, and consumer proofs of concept (plain HTML, Vite,
+   React 19, Vue).
 5. **Playwright VRT** (Docker, baselines).
 6. **GitHub Actions**: CI -> VRT -> deploy to Workers -> release, with the fork guards.
 7. **MVP components**: `foundation` (ripple, focus-ring, elevation, extracted as they are needed),
@@ -482,11 +505,12 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
 - [ ] Pushes to `develop` / `main` deploy automatically; the whole pipeline costs nothing
 - [ ] Merging a PR with a changeset results in a tag, a Release, an npm publish and a back-merge PR
 - [ ] A fork with no secrets passes CI and skips deploy / publish instead of failing
-- [ ] `import 'su3-web-materials/button.js'` registers `<su3-button>` in a plain HTML page, a Vite
-      app, a React 19 app and a Vue app, with working styles
+- [x] `import 'su3-web-materials/button.js'` registers `<su3-button>` in a plain HTML page, a Vite
+      app, a React 19 app and a Vue app, with working styles (`make check-consumers`, Phase 4)
 - [x] Re-theming by overriding `--su3-sys-*` works, and the contrasting product demonstrates it
       (`acme`, Phase 3)
-- [ ] `custom-elements.json` is published and the Storybook docs are generated from it
+- [x] `custom-elements.json` is published and the Storybook docs are generated from it (the
+      manifest is in the package; the npm publish itself is Phase 8)
 - [ ] No source, token or documentation text from material-web is present; `THIRD_PARTY_NOTICES.md`
       lists every bundled font/icon and its license
 
@@ -526,8 +550,8 @@ and explain the reasoning in the PR description.
     branding (§1).
   - Restored the missing §3 (project structure), made productId a themed-demo concept, defined the
     MVP scope and the post-MVP roadmap (§3, §4, §14).
-  - Opened items: decorators (Phase 1), tsdown unbundled output and CSS handling (Phase 4),
-    preview environment mechanism (Phase 6).
+  - Opened items: decorators (Phase 1, resolved), tsdown unbundled output and CSS handling (Phase 4,
+    resolved), preview environment mechanism (Phase 6).
 - **Phase 1 spike (2026-10-20)**: decorators resolved as **none**.
   - Why: Lit recommends experimental decorators only "for now", and standard decorators need the
     `accessor` keyword plus compiler and bundler support that varies between tools. Decorator-free
@@ -607,3 +631,27 @@ and explain the reasoning in the PR description.
     because it writes the package `exports`.
   - Notes: the Workers runtime adds a redirect hop for `iframe.html` (§4); `wrangler dev` needs no
     login for assets-only sites; `.dockerignore` keeps the build context free of env files.
+- **Phase 4 completed (2026-10-21)**: the repository builds into a publishable package and is
+  proven from the consumer side. Details: `docs/2026-10-21_03_phase4-package-build/`.
+  - Resolved the two open items: **unbundled output** works with tsdown (`unbundle: true`; import
+    specifiers become `.js` in JavaScript and declarations, JSDoc is kept) and **CSS handling** is a
+    post-build script (`tokens.css` and `themes/*.css`), because component styles live in JavaScript.
+  - Delivered: `tsdown.config.ts`; `src/shared/all.ts`; derived `exports`, `files`, `sideEffects`,
+    `types`, `customElements`, `publishConfig` (no `private`); `scripts/build-package-assets.ts`;
+    `scripts/lib/{package-exports,manifest-paths}.ts`; `scripts/check-package.ts`;
+    `scripts/new-product.ts`; `scripts/sync-package-exports.ts`; `scripts/check-consumers.ts` with
+    four fixtures; Makefile targets `build`, `check-package`, `sync-exports`, `new-product`,
+    `check-consumers` and `local-*` twins. The package is 39 files, 103.7 KiB unpacked.
+  - Verified: `pnpm run ci` and `make ci` (216 tests, build, publint, attw `esm-only`); all four
+    consumer fixtures on the host and in Docker (element defined, accent `rgb(0, 96, 113)` by
+    default, `rgb(105, 57, 150)` with `themes/acme.css`, a click works, React 19 and Vite type-check
+    with `skipLibCheck: false`, plain HTML works with an import map and with no `tokens.css`);
+    mutation checks for every package check; a `make new-product` round trip.
+  - Decisions: ES2022 target (§9); `private` removed, publishing stays the owner's manual step;
+    the analyzer's `packagejson` option is off because it rewrote the `customElements` field;
+    `check:consumers` stays out of `ci` (network and Chromium) and becomes a CI job in Phase 6;
+    the published manifest is a rewritten copy of the source one.
+  - Notes: attw reports `CJSResolvesToESM` for the ESM-only package; it is ignored by the
+    `esm-only` profile on purpose (CommonJS consumers use a dynamic import). Consumers of React need
+    their own JSX typing for the custom element (shown in `tests/consumers/react`); a documented
+    snippet belongs in the README (Phase 8).

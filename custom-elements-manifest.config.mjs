@@ -37,5 +37,8 @@ export default {
   ],
   outdir: '.',
   litelement: true,
+  // The analyzer would otherwise rewrite the `customElements` field of package.json on every run;
+  // that field points at dist/custom-elements.json (scripts/build-package-assets.ts).
+  packagejson: false,
   plugins: [publicMembersOnly],
 };

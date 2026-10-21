@@ -50,9 +50,11 @@ Derived values:
      pointer behavior, disabled states, form participation (if any) and events.
    - `index.ts`: the component entry. Registers the element with `defineElement` from
      `src/shared/define-element.ts` and re-exports the class and its types.
-4. Re-export from the scope's `index.ts` and add the `./{name}.js` (or product) entry to
-   `package.json` `exports`.
-5. Run `make lint typecheck test` and fix failures. Then run `make vrt-update` to create the
+4. Re-export the class and types from the scope's `index.ts`. For a shared component also add
+   `import './components/{category}/{name}/index.ts';` to `src/shared/all.ts`, then run
+   `make sync-exports` to add the `./{name}.js` entry to `package.json` `exports` (the derived map is
+   checked by `src/conventions.test.ts`).
+5. Run `make lint typecheck test build check-package` and fix failures. Then run `make vrt-update` to create the
    baselines for the new stories and tell the user which baseline files were added.
 6. Mention that a changeset is needed for a user-visible addition (`make changeset`, minor).
 

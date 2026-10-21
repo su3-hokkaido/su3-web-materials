@@ -6,6 +6,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { PUBLISH_FIELDS, expectedExports, listComponents } from '../scripts/lib/package-exports.ts';
 import { PORTAL_PLACEHOLDER } from '../scripts/lib/storybook-site.ts';
 import { declaredProperties, themeColorOverrides } from '../scripts/lib/theme-css.ts';
 import { findContrastFailures, resolveColorRoles } from './shared/tokens/contrast.ts';
@@ -328,6 +329,36 @@ describe('site delivery (docs/project_plan.md section 4)', () => {
     expect(stages).toEqual(['base', 'dev', 'build', 'preview']);
     expect(dockerfile).toContain('COPY deploy/local/nginx.conf /etc/nginx/conf.d/default.conf');
     expect(read(root, 'compose.yaml')).toMatch(/preview:[\s\S]*profiles: \[preview\]/);
+  });
+});
+
+describe('package (docs/project_plan.md section 9)', () => {
+  const packageJson = JSON.parse(read(root, 'package.json')) as Record<string, unknown>;
+
+  it('derives exports from the components and products (run `pnpm run sync:exports` after adding one)', () => {
+    expect(packageJson['exports']).toEqual(expectedExports(listComponents(root), products));
+  });
+
+  it('sets the publishing fields and is not private', () => {
+    expect(packageJson['private']).toBeUndefined();
+    expect(packageJson['type']).toBe('module');
+    for (const [field, value] of Object.entries(PUBLISH_FIELDS)) {
+      expect(packageJson[field], field).toEqual(value);
+    }
+    // engines would be published and constrain consumers; the Node.js pin is devEngines only.
+    expect(packageJson['engines']).toBeUndefined();
+  });
+
+  it('has lit as its only runtime dependency, so no framework is required of consumers', () => {
+    const dependencies = packageJson['dependencies'] as Record<string, string>;
+    expect(Object.keys(dependencies)).toEqual(['lit']);
+  });
+
+  it('registers every component in all.ts', () => {
+    const all = read(srcDir, 'shared/all.ts');
+    for (const { category, name } of listComponents(root)) {
+      expect(all, name).toContain(`'./components/${category}/${name}/index.ts'`);
+    }
   });
 });
 
