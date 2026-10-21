@@ -1,5 +1,11 @@
 # su3-web-materials
 
+## 0.1.1
+
+### Patch Changes
+
+- 0cd349c: Just to update readme
+
 ## 0.1.0
 
 ### Minor Changes
