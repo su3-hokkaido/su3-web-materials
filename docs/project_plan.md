@@ -179,10 +179,16 @@ Workers Static Assets, so the clean-URL design is unchanged.
   Phase 3**: two products plus the portal are 96 files and 16.2 MiB (largest file 3.2 MiB), with 2
   dynamic redirect rules, so the limits are not a practical concern. `scripts/build-storybook-all.ts`
   still checks them on every build (warning above 75% of the file limit, failure above any limit).
-- Environments: `main` -> production Worker; `develop` -> a separate preview Worker (or a Worker
-  preview/version URL). **Open (Phase 6)**: pick between a second Worker and Worker Previews after
-  reading the current Cloudflare docs.
-- Deploys: GitHub Actions + `wrangler deploy`, gated so that CI must pass first. Workers Builds
+- Environments (**Decision, Phase 6**): `main` -> the production Worker `${CLOUDFLARE_WORKER_NAME}`;
+  `develop` -> a second, **persistent** preview Worker `${CLOUDFLARE_WORKER_NAME}-dev`, both through
+  `wrangler deploy --name` with `deploy/cloudflare/wrangler.jsonc`. Cloudflare's current guidance:
+  Previews (`wrangler preview`) are branch/pull-request environments under one Worker; Wrangler
+  environments (separately named Workers) fit development and staging; Version URLs and
+  `--preview-alias` only inspect one uploaded version and are not isolated. A stable URL that follows
+  `develop` is a persistent Worker; it is free (100 Workers on the Free plan) and needs nothing but
+  static assets. Per-pull-request previews can be added later with `wrangler preview`.
+- Deploys: GitHub Actions + `deploy/cloudflare/deploy.ts` (`wrangler deploy`), gated so that CI must
+  pass first (§8). Workers Builds
   (Cloudflare's own Git integration) is the fallback if the API token handling becomes a burden.
 - Domain: `*.workers.dev` by default; a custom domain is optional and documented in README.
 
@@ -260,24 +266,50 @@ follow in Phases 3 to 6). The Makefile must work with GNU make 3.81, the macOS d
 
 ### Workflows
 
-| File                | Trigger                                               | Jobs                                                                                |
-| ------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `ci.yml`            | `pull_request`, and `push` to `main` / `develop` only | prettier, eslint, tsc, Vitest Browser Mode, Storybook build, package build          |
-| `vrt.yml`           | `pull_request`                                        | Build every Storybook -> Playwright VRT; upload the diff report on failure          |
-| `deploy_dev.yml`    | push to `develop`                                     | Build every Storybook -> deploy the preview environment                             |
-| `deploy_prod.yml`   | push to `main`                                        | Build every Storybook -> deploy production                                          |
-| `create-d2m-pr.yml` | push to `develop`                                     | Open/update the `develop` -> `main` release PR                                      |
-| `release.yml`       | push to `main`                                        | Changesets: Version Packages PR, or tag / GitHub Release / npm publish + back-merge |
+| File                | Trigger                                        | Jobs                                                                                  |
+| ------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `ci.yml`            | `pull_request` and `workflow_call` (no `push`) | analyze, prettier, eslint, tsc, Vitest (Chromium), package build and check, Storybook |
+| `vrt.yml`           | `pull_request`, `workflow_dispatch`            | Build every Storybook -> Playwright VRT; upload the diff report on failure            |
+| `consumers.yml`     | `pull_request`, weekly, `workflow_dispatch`    | Install the packed tarball into the plain HTML, Vite, React 19 and Vue fixtures       |
+| `deploy_dev.yml`    | push to `develop`                              | `ci.yml`, then build every Storybook -> deploy the preview Worker (`-dev`)            |
+| `deploy_prod.yml`   | push to `main`                                 | `ci.yml`, then build every Storybook -> deploy the production Worker                  |
+| `create-d2m-pr.yml` | push to `develop`                              | Open/update the `develop` -> `main` release PR                                        |
+| `release.yml`       | push to `main`                                 | Changesets: Version Packages PR, or tag / GitHub Release / npm publish + back-merge   |
 
-- Deploy logic is confined to `deploy/cloudflare/` and the reusable `_deploy.yml`.
+- Deploy logic is confined to `deploy/cloudflare/` (`deploy.ts`, pure `deploy-lib.ts` with unit
+  tests and an end-to-end test against a stubbed `pnpm`) and the reusable `_deploy.yml`.
+- **CI gating (Decision, Phase 6)**: `ci.yml` has no `push` trigger; the deploy workflows call it as
+  their `checks` job and deploy with `needs: checks`, so a push to `develop` or `main` runs CI exactly
+  once and a failing CI blocks the deploy. Forks run CI on push and skip only the deploy job. Vitest
+  Browser Mode needs Chromium, so the CI and consumer jobs run `playwright install --with-deps
+chromium`.
 - Use GitHub Environments (`development`, `production`); cache the pnpm store (not in release).
 - Pin every action to a full commit SHA with a `# vX.Y.Z` comment; Dependabot updates them against
   `develop`. Keep `permissions` minimal.
-- Deploy jobs run only when `vars.CLOUDFLARE_WORKER_NAME` is set; the npm publish step runs only
-  when `github.repository` equals `vars.NPM_PUBLISH_REPOSITORY`. These guards keep forks green.
-  (Lower priority than in the previous plan: this repository is a showcase, not a template.)
+- Deploy jobs run only when `vars.CLOUDFLARE_WORKER_NAME` is set (renamed from the Pages-era
+  `CLOUDFLARE_PROJECT_NAME`); the npm publish step runs only when `github.repository` equals
+  `vars.NPM_PUBLISH_REPOSITORY`. These guards keep forks green. (Lower priority than in the previous
+  plan: this repository is a showcase, not a template.)
 - Pull requests opened with `GITHUB_TOKEN` do not trigger workflows; an optional `RELEASE_TOKEN`
   secret is used for the release, Version Packages and back-merge PRs when set.
+
+### Owner's one-time setup
+
+Claude never runs remote or deploy commands, so these steps are the owner's (the same list is in
+`docs/2026-10-21_05_phase6-github-actions/design.md`; the README repeats it in Phase 8):
+
+1. **GitHub**: make `develop` the default branch; Settings > Actions > General: allow GitHub Actions
+   to create and approve pull requests (or set the optional `RELEASE_TOKEN` secret); enable
+   Dependabot version updates.
+2. **Environments**: create `development` and `production` (protect `production`).
+3. **Cloudflare**: an API token from the "Edit Cloudflare Workers" template and the account id as the
+   secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`; the repository variable
+   `CLOUDFLARE_WORKER_NAME` (for example `su3-web-materials`); a `workers.dev` subdomain.
+4. **npm**: confirm the name is free, publish `0.0.0` once by hand from a clean checkout of `main`,
+   add a trusted publisher naming `release.yml`, and set the repository variable
+   `NPM_PUBLISH_REPOSITORY` to `su3-hokkaido/su3-web-materials`.
+5. **Branch protection** for `main` and `develop`: require `Checks`, `Visual regression test` and
+   `Consumer check`, and a pull request before merging.
 
 ---
 
@@ -499,7 +531,8 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
    `custom-elements.json`, `make new-product`, and consumer proofs of concept (plain HTML, Vite,
    React 19, Vue).
 5. **Playwright VRT** (done, §17): Docker image, baselines, strict comparison, media-feature spec.
-6. **GitHub Actions**: CI -> VRT -> deploy to Workers -> release, with the fork guards.
+6. **GitHub Actions** (done, §17): CI -> VRT -> consumers -> deploy to Workers -> release, with the
+   fork guards.
 7. **MVP components**: `foundation` (ripple, focus-ring, elevation, extracted as they are needed),
    IconButton, Checkbox, Switch, TextField, Divider.
 8. **README / README_JA / CLAUDE.md / catalog pages**; first manual npm publish.
@@ -520,8 +553,12 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
       Phase 3; the real preview deploy remains, Phase 6)
 - [ ] `make ci` succeeds, and CI runs the same checks
 - [ ] Pushes to `develop` / `main` deploy automatically; the whole pipeline costs nothing
+      (workflows, deploy script and gating are in place and tested statically in Phase 6; the first
+      real run needs the owner's setup)
 - [ ] Merging a PR with a changeset results in a tag, a Release, an npm publish and a back-merge PR
-- [ ] A fork with no secrets passes CI and skips deploy / publish instead of failing
+      (the release workflow, script and an initial changeset are in place; needs the owner's setup)
+- [ ] A fork with no secrets passes CI and skips deploy / publish instead of failing (guards and
+      their tests are in place; to be observed on a real fork)
 - [x] `import 'su3-web-materials/button.js'` registers `<su3-button>` in a plain HTML page, a Vite
       app, a React 19 app and a Vue app, with working styles (`make check-consumers`, Phase 4)
 - [x] Re-theming by overriding `--su3-sys-*` works, and the contrasting product demonstrates it
@@ -701,3 +738,28 @@ and explain the reasoning in the PR description.
   - Notes: a transient Docker Hub timeout failed one `make vrt --build` (retry); a baseline review
     means viewing the images, not trusting the green run (the first baselines showed unstyled text and
     exposed bug 1).
+- **Phase 6 completed (2026-10-21)**: the workflows are adapted and tested; everything that needs a
+  remote account is the owner's one-time setup (§8). Details:
+  `docs/2026-10-21_05_phase6-github-actions/`.
+  - Resolved the last open item: `develop` deploys a **second persistent Worker** (`-dev`), `main` the
+    production Worker, both through `wrangler deploy --name` (§4).
+  - Delivered: `deploy/cloudflare/{deploy.ts,deploy-lib.ts}` with unit tests and an end-to-end test
+    against a stubbed `pnpm` (no network); `_deploy.yml` for Workers with the
+    `CLOUDFLARE_WORKER_NAME` guard; `ci.yml` as `pull_request` plus `workflow_call`, installing
+    Chromium; `deploy_dev.yml` and `deploy_prod.yml` calling it and `needs: checks`; `consumers.yml`
+    (pull request, weekly, manual); `vrt.yml` touch-ups; `@changesets/cli`, the `changeset` and
+    `release` scripts, an initial minor changeset and a reset `CHANGELOG.md`; Makefile `changeset`
+    targets; deny rules for `deploy.ts` and `pnpm run release` in `.claude/settings.json`.
+  - Verified: 150 convention tests including the workflow checks (every external action pinned to a
+    SHA with a version comment, minimal permissions, timeouts, guards, CI gating, Chromium before
+    `pnpm run ci`, Trusted Publishing without an npm token, Cloudflare credentials only in the deploy
+    workflows) and 11 injected mistakes that each fail the right check; `actionlint` (Docker) is clean
+    and does report errors in a deliberately broken workflow; `make ci` passes. Not run, by policy:
+    any deploy, publish, push or pull request.
+  - Decisions: no `push` trigger on `ci.yml` (gating through `workflow_call`); the deploy script is
+    TypeScript so it is testable; the consumer check is its own workflow, not part of `ci`.
+  - Notes: the placeholder text in `CHANGELOG.md` ("Early Bird / hogehoge", version 0.1.0) was reset
+    because Changesets owns the file and the initial changeset produces 0.1.0; delete
+    `.changeset/initial-release.md` if the first release should differ. Required status check names
+    for branch protection are `Checks` (CI), `Visual regression test` and `Consumer check`; when CI
+    runs as the deploy workflows' `checks` job it is reported as `CI / Checks`.

@@ -6,7 +6,8 @@
 #
 # Publishing runs only in the repository named by the repository variable NPM_PUBLISH_REPOSITORY
 # (owner/repo), so template copies and forks never publish the package. The npm trusted publisher
-# must name this workflow file. Optional secret RELEASE_TOKEN (GitHub App token or fine-grained
+# must name this workflow file; that needs the package to exist, so the first publish (0.0.0) is a
+# manual step by the owner (docs/project_plan.md section 9). Optional secret RELEASE_TOKEN (GitHub App token or fine-grained
 # PAT with contents and pull-requests write): pull requests opened with GITHUB_TOKEN do not trigger
 # CI, so set it if those checks are required.
 name: Release

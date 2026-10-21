@@ -1,10 +1,12 @@
 # Playwright visual regression test (docs/project_plan.md section 11). Storybook is built on the
 # runner, then the suite runs in the same compose service and image as `make vrt`, so CI and local
-# runs render identically.
+# runs render identically. The comparison is strict (threshold 0.01): a changed baseline is a
+# visual change that a reviewer must look at, not noise.
 name: VRT
 
 on:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read

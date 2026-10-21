@@ -86,13 +86,16 @@
     "sync:exports": "node scripts/sync-package-exports.ts",
     "check:package": "node scripts/check-package.ts",
     "check:consumers": "node scripts/check-consumers.ts",
-    "new-product": "node scripts/new-product.ts"
+    "new-product": "node scripts/new-product.ts",
+    "changeset": "changeset",
+    "release": "pnpm run build && pnpm run check:package && changeset publish"
   },
   "dependencies": {
     "lit": "^3.3.3"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "0.18.5",
+    "@changesets/cli": "3.0.3",
     "@custom-elements-manifest/analyzer": "0.11.0",
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.64.1",

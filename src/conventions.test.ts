@@ -440,6 +440,154 @@ describe('visual regression test (docs/project_plan.md section 11)', () => {
   });
 });
 
+describe('GitHub Actions (docs/project_plan.md section 8)', () => {
+  const workflowsDir = join(root, '.github/workflows');
+  const workflowFiles = readdirSync(workflowsDir).filter((file) => file.endsWith('.yml'));
+  const workflow = (name: string): string => read(workflowsDir, name);
+  const actionFiles = [
+    ...workflowFiles.map((file) => join(workflowsDir, file)),
+    join(root, '.github/actions/setup/action.yml'),
+  ];
+
+  it('finds the workflows', () => {
+    expect(workflowFiles).toEqual(
+      expect.arrayContaining([
+        '_deploy.yml',
+        'ci.yml',
+        'consumers.yml',
+        'create-d2m-pr.yml',
+        'deploy_dev.yml',
+        'deploy_prod.yml',
+        'release.yml',
+        'vrt.yml',
+      ]),
+    );
+  });
+
+  it('pins every external action to a full commit SHA with a version comment', () => {
+    const uses = actionFiles.flatMap((file) =>
+      [...readFileSync(file, 'utf8').matchAll(/^\s*-?\s*uses:\s*(\S+)(?:\s+(#.*))?$/gm)].map(
+        (match) => ({
+          file: relative(root, file),
+          target: match[1] ?? '',
+          comment: match[2] ?? '',
+        }),
+      ),
+    );
+    const external = uses.filter(({ target }) => !target.startsWith('./'));
+    expect(external.length).toBeGreaterThan(0);
+    for (const { file, target, comment } of external) {
+      expect(target, `${file}: ${target}`).toMatch(/^[\w.-]+\/[\w./-]+@[0-9a-f]{40}$/);
+      expect(comment, `${file}: ${target} needs a version comment`).toMatch(/^# v\d+(\.\d+)*/);
+    }
+  });
+
+  it('declares minimal top-level permissions and avoids pull_request_target', () => {
+    for (const file of workflowFiles) {
+      const source = workflow(file);
+      expect(source, file).toMatch(/^permissions:\n {2}contents: read$/m);
+      expect(source, file).not.toMatch(/pull_request_target|write-all/);
+    }
+  });
+
+  it('gives every job on a runner a timeout', () => {
+    for (const file of workflowFiles) {
+      const source = workflow(file);
+      const jobs = source.match(/^ {4}runs-on:/gm)?.length ?? 0;
+      const timeouts = source.match(/^ {4}timeout-minutes:/gm)?.length ?? 0;
+      expect(timeouts, file).toBeGreaterThanOrEqual(jobs);
+    }
+  });
+
+  it('runs CI on pull requests and as a reusable workflow, installing Chromium first', () => {
+    const ci = workflow('ci.yml');
+    expect(ci).toMatch(/^on:\n {2}pull_request:\n {2}workflow_call:/m);
+    expect(ci).not.toMatch(/^ {2}push:/m);
+    expect(ci.indexOf('playwright install --with-deps chromium')).toBeGreaterThan(-1);
+    expect(ci.indexOf('playwright install --with-deps chromium')).toBeLessThan(
+      ci.indexOf('pnpm run ci'),
+    );
+  });
+
+  it.each([
+    ['deploy_dev.yml', 'develop', 'development'],
+    ['deploy_prod.yml', 'main', 'production'],
+  ])(
+    'deploys %s only after CI passes, to the %s branch environment',
+    (file, branch, environment) => {
+      const source = workflow(file);
+      expect(source).toContain(`branches: [${branch}]`);
+      expect(source).toContain('uses: ./.github/workflows/ci.yml');
+      expect(source).toMatch(/deploy:\n(?:.*\n)*? {4}needs: checks/);
+      expect(source).toContain('uses: ./.github/workflows/_deploy.yml');
+      expect(source).toContain(`environment: ${environment}`);
+    },
+  );
+
+  it('skips the deploy unless CLOUDFLARE_WORKER_NAME is set, and deploys through the script', () => {
+    const deploy = workflow('_deploy.yml');
+    expect(deploy).toContain("if: vars.CLOUDFLARE_WORKER_NAME == ''");
+    expect(deploy).toContain("if: vars.CLOUDFLARE_WORKER_NAME != ''");
+    expect(deploy).toContain('node deploy/cloudflare/deploy.ts "$DEPLOY_ENVIRONMENT"');
+    expect(deploy).toContain('pnpm run build-storybook:all');
+    expect(deploy).not.toMatch(/Pages|CLOUDFLARE_PROJECT_NAME|deploy\.sh/);
+    // Cloudflare credentials appear only where they are needed.
+    for (const file of workflowFiles.filter(
+      (name) => !['_deploy.yml', 'deploy_dev.yml', 'deploy_prod.yml'].includes(name),
+    )) {
+      expect(workflow(file), file).not.toContain('CLOUDFLARE_');
+    }
+  });
+
+  it('checks the consumer fixtures in their own scheduled workflow', () => {
+    const consumers = workflow('consumers.yml');
+    expect(consumers).toContain('schedule:');
+    expect(consumers).toContain('playwright install --with-deps chromium');
+    expect(consumers).toContain('pnpm run check:consumers');
+    expect(workflow('ci.yml')).not.toContain('check:consumers');
+  });
+
+  it('runs the VRT in the compose service after building every Storybook', () => {
+    const vrt = workflow('vrt.yml');
+    expect(vrt.indexOf('pnpm run build-storybook:all')).toBeGreaterThan(-1);
+    expect(vrt.indexOf('pnpm run build-storybook:all')).toBeLessThan(
+      vrt.indexOf('docker compose --profile vrt run --rm --build vrt'),
+    );
+    expect(vrt).toContain('uses: actions/upload-artifact@');
+  });
+
+  it('publishes only from the owning repository, with Trusted Publishing and no npm token', () => {
+    const release = workflow('release.yml');
+    expect(release).toContain('github.repository == vars.NPM_PUBLISH_REPOSITORY');
+    expect(release).toContain("'pnpm run release'");
+    expect(release).toMatch(/^ {6}id-token: write/m);
+    expect(release).toContain("cache: 'false'");
+    expect(release).not.toMatch(/NODE_AUTH_TOKEN|NPM_TOKEN|_authToken|registry-url/);
+    expect(release).toContain('branches: [main]');
+  });
+
+  it('has a release script that checks the package before publishing, and a changeset setup', () => {
+    const { scripts, devDependencies } = JSON.parse(read(root, 'package.json')) as {
+      scripts: Record<string, string>;
+      devDependencies: Record<string, string>;
+    };
+    expect(scripts['release']).toBe(
+      'pnpm run build && pnpm run check:package && changeset publish',
+    );
+    expect(scripts['changeset']).toBe('changeset');
+    expect(devDependencies['@changesets/cli']).toBeDefined();
+    const config = JSON.parse(read(root, '.changeset/config.json')) as Record<string, unknown>;
+    expect(config['baseBranch']).toBe('develop');
+    expect(config['access']).toBe('public');
+  });
+
+  it('keeps Dependabot on the actions, targeting develop', () => {
+    const dependabot = read(root, '.github/dependabot.yml');
+    expect(dependabot).toContain('package-ecosystem: github-actions');
+    expect(dependabot).toContain('target-branch: develop');
+  });
+});
+
 describe('provenance (docs/project_plan.md section 1)', () => {
   const files = sourceFiles(srcDir).filter((file) => !file.endsWith('conventions.test.ts'));
 
