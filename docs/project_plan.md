@@ -189,8 +189,15 @@ Workers Static Assets, so the clean-URL design is unchanged.
 - `compose.yaml`: `storybook` service on host `5070`; `preview` service (profile) on `5071`; `vrt`
   service (profile) using the official Playwright image (§11). Ports are configurable through
   `DEV_PORT` / `PREVIEW_PORT` in `.env.docker`.
-- Vitest Browser Mode needs Chromium: tests run in the Playwright image as well (`make test`), so
-  host and CI results match.
+- **Decision (Phase 2)**: Vitest Browser Mode needs Chromium, which lives in the **dev image**
+  (`node:26-trixie-slim`), not in the Playwright image: `devEngines.runtime` requires Node.js 26
+  while the Playwright image ships a different major. The `dev` stage installs the Playwright CLI at
+  the exact `playwright` version from `package.json`, runs `playwright install --with-deps chromium`
+  into `PLAYWRIGHT_BROWSERS_PATH=/ms-playwright`, and removes the CLI again; compose sets
+  `shm_size: 1gb`. `make test` and `make ci` therefore run the browser tests in the container. The
+  pixel-exact VRT keeps its own Playwright image (Phase 5), because behavior tests do not depend on
+  OS font rendering. `src/conventions.test.ts` keeps the `playwright` and `@playwright/test` pins
+  equal and the Dockerfile reading the version from `package.json`.
 - `local-*` targets exist for people who have Node.js on the host.
 
 ---
@@ -198,6 +205,10 @@ Workers Static Assets, so the clean-URL design is unchanged.
 ## 6. Makefile
 
 `make help` lists every target. The product is selected with `PRODUCT_ID` (default `sample`).
+The table is the target set for the finished project; each phase adds the targets for what it
+introduces (Phase 2: everything Docker-related and the checks, plus `analyze`; `preview`,
+`build-storybook` for every product, `build`, `new-product`, `vrt`, `vrt-update` and `changeset`
+follow in Phases 3 to 6). The Makefile must work with GNU make 3.81, the macOS default.
 
 | Target                                         | Description                                                |
 | ---------------------------------------------- | ---------------------------------------------------------- |
@@ -435,7 +446,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
 1. **Foundation spike** (done, §17): pnpm / TS / ESLint / Prettier / Storybook (web-components-vite) /
    Vitest Browser Mode; token files; design language doc; resolve the decorator question; build
    `su3-button` (all variants) end to end with story, test and docs.
-2. **Docker / compose / Makefile** (carry over and trim; no AWS targets).
+2. **Docker / compose / Makefile** (done, §17): carried over and trimmed; no AWS targets.
 3. **Per-productId builds, portal, URL rewrite** (nginx and Cloudflare `_redirects`), `sample` and
    one contrasting product; measure the file count against the 20,000-file limit.
 4. **Package build**: tsdown per-component entries, `exports`, `custom-elements.json`,
@@ -547,3 +558,20 @@ and explain the reasoning in the PR description.
     first real form control); `package.json` `exports` and publishing (Phase 4).
   - `README_sample_from_another_repo.md` in the repository root is a leftover from the template
     repository and should be moved out of the root or deleted by the owner.
+- **Phase 2 completed (2026-10-21)**: Docker is the working environment. Details:
+  `docs/2026-10-21_01_phase2-docker-makefile/`.
+  - Delivered: `Dockerfile` (`base`, `dev` with Chromium), `compose.yaml` (`storybook` service),
+    `Makefile` (Docker and `local-*` targets, `help`), `.dockerignore`, `.env.docker.sample`, and the
+    Dockerfile checks in `src/conventions.test.ts`.
+  - Verified in Docker: a fresh `make setup`; `make ci` (130 tests including the Chromium browser
+    tests, Storybook build); `make up` serving Storybook on 5070 with file changes picked up through
+    the bind mount (no polling needed); `make down` and `make clean` leaving no containers, volumes
+    or images; `make local-ci` on the host; `make help` on GNU make 3.81.
+  - Decisions: Chromium in the dev image (§5); `.storybook/main.ts` treats the default product
+    `sample` as optional until Phase 3, because compose always passes `PRODUCT_ID`; the `analyze`
+    target was added; `.env.local.sample` and the AWS and Cloudflare secrets targets are gone for good
+    (§7).
+  - Notes: the dev image is about 2 GB because of Chromium; Storybook prints "Change detection
+    unavailable: git is not available" in the container (harmless; `.git` is not in the image);
+    pnpm's store setting makes npm print an unknown-config warning during the image build
+    (harmless).

@@ -6,6 +6,8 @@ coverage
 dist
 storybook-static
 .wrangler
+.vite
+.vitest
 test-results
 playwright-report
 blob-report
