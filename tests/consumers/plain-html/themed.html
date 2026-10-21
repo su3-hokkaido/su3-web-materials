@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>su3-web-materials in plain HTML, themed</title>
+    <!-- tokens first, then the product theme: equal-specificity rules win by source order. -->
+    <link rel="stylesheet" href="/node_modules/su3-web-materials/dist/tokens.css" />
+    <link rel="stylesheet" href="/node_modules/su3-web-materials/dist/themes/acme.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "lit": "/node_modules/lit/index.js",
+          "lit/": "/node_modules/lit/",
+          "lit-html": "/node_modules/lit-html/lit-html.js",
+          "lit-html/": "/node_modules/lit-html/",
+          "lit-element/": "/node_modules/lit-element/",
+          "@lit/reactive-element": "/node_modules/@lit/reactive-element/reactive-element.js",
+          "@lit/reactive-element/": "/node_modules/@lit/reactive-element/",
+          "su3-web-materials/button.js": "/node_modules/su3-web-materials/dist/shared/components/buttons/button/index.js",
+          "su3-web-materials/all.js": "/node_modules/su3-web-materials/dist/shared/all.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <su3-button id="subject">Save</su3-button>
+    <script type="module">
+      import 'su3-web-materials/all.js';
+    </script>
+  </body>
+</html>

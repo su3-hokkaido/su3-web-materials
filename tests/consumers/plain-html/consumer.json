@@ -1,0 +1,7 @@
+{
+  "root": ".",
+  "pages": [
+    { "path": "/index.html", "expect": "default" },
+    { "path": "/themed.html", "expect": "acme" }
+  ]
+}

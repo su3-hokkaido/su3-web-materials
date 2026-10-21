@@ -1,8 +1,19 @@
 {
   "name": "su3-web-materials",
   "version": "0.0.0",
-  "private": true,
-  "description": "Web Components catalog built with Lit and Storybook.",
+  "description": "Web Components built with Lit: a themable component catalog with design tokens, shown in Storybook.",
+  "keywords": [
+    "web-components",
+    "lit",
+    "custom-elements",
+    "design-system",
+    "design-tokens",
+    "storybook"
+  ],
+  "homepage": "https://github.com/su3-hokkaido/su3-web-materials#readme",
+  "bugs": {
+    "url": "https://github.com/su3-hokkaido/su3-web-materials/issues"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -17,8 +28,50 @@
       "onFail": "error"
     }
   },
+  "files": [
+    "dist",
+    "!dist/storybook"
+  ],
+  "sideEffects": [
+    "./dist/shared/all.js",
+    "./dist/shared/components/*/*/index.js",
+    "*.css"
+  ],
+  "types": "./dist/shared/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/shared/index.d.ts",
+      "default": "./dist/shared/index.js"
+    },
+    "./all.js": {
+      "types": "./dist/shared/all.d.ts",
+      "default": "./dist/shared/all.js"
+    },
+    "./button.js": {
+      "types": "./dist/shared/components/buttons/button/index.d.ts",
+      "default": "./dist/shared/components/buttons/button/index.js"
+    },
+    "./acme": {
+      "types": "./dist/products/acme/index.d.ts",
+      "default": "./dist/products/acme/index.js"
+    },
+    "./sample": {
+      "types": "./dist/products/sample/index.d.ts",
+      "default": "./dist/products/sample/index.js"
+    },
+    "./tokens.css": "./dist/tokens.css",
+    "./themes/acme.css": "./dist/themes/acme.css",
+    "./themes/sample.css": "./dist/themes/sample.css",
+    "./custom-elements.json": "./dist/custom-elements.json",
+    "./package.json": "./package.json"
+  },
+  "customElements": "./dist/custom-elements.json",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "analyze": "cem analyze",
+    "build": "pnpm run analyze && tsdown && node scripts/build-package-assets.ts",
     "dev": "pnpm run analyze && storybook dev -p 5070",
     "build-storybook": "pnpm run analyze && storybook build",
     "build-storybook:all": "pnpm run analyze && node scripts/build-storybook-all.ts",
@@ -29,12 +82,17 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
-    "ci": "pnpm run analyze && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build-storybook:all"
+    "ci": "pnpm run analyze && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run check:package && pnpm run build-storybook:all",
+    "sync:exports": "node scripts/sync-package-exports.ts",
+    "check:package": "node scripts/check-package.ts",
+    "check:consumers": "node scripts/check-consumers.ts",
+    "new-product": "node scripts/new-product.ts"
   },
   "dependencies": {
     "lit": "^3.3.3"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
     "@custom-elements-manifest/analyzer": "0.11.0",
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.64.1",
@@ -53,12 +111,13 @@
     "globals": "17.13.0",
     "playwright": "1.64.1",
     "prettier": "3.9.10",
+    "publint": "0.3.25",
     "storybook": "10.6.2",
+    "tsdown": "0.23.1",
     "typescript": "6.0.3",
     "typescript-eslint": "8.71.2",
     "vite": "8.3.4",
     "vitest": "5.0.5",
     "wrangler": "4.151.3"
-  },
-  "customElements": "custom-elements.json"
+  }
 }

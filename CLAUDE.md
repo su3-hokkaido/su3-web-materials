@@ -61,6 +61,13 @@ Summary of `docs/project_plan.md` §3, §4, §10 and §13:
   (registration lives in the component's `index.ts`, through the guarded `defineElement`).
 - Dependency direction: products may import `shared`; `shared` never imports products; products
   never import each other.
+- The npm package is built unbundled into `dist` (`make build`, `make check-package`). `package.json`
+  `exports` is derived from the directory layout: after adding a shared component (also import it in
+  `src/shared/all.ts`) or a product, run `make sync-exports` (`make new-product` does it for
+  products). Class modules stay side-effect free and only the component's `index.ts` registers the
+  element, because `sideEffects` lists just those entries. `make check-consumers` (network,
+  Chromium) installs the packed tarball into the plain HTML, Vite, React 19 and Vue fixtures in
+  `tests/consumers`. Never publish: `npm publish` and `pnpm publish` are the owner's manual step.
 - A product (`src/products/{productId}/`) is a themed demo: `index.ts` plus `theme.css`. The theme
   overrides only `--su3-sys-*` and `--su3-comp-*` tokens with the same selectors as `tokens.css`,
   colors as plain `#rrggbb`, and must keep the contrast thresholds (checked for every product by
@@ -91,7 +98,8 @@ A new or changed component is done when:
       reports no violations.
 - [ ] Vitest Browser Mode tests cover variants, keyboard and pointer behavior, states, form
       participation (if any) and events, using role-based queries.
-- [ ] It is exported from the scope's `index.ts`, has its `package.json` `exports` entry, and imports
+- [ ] It is re-exported from the scope's `index.ts`, imported in `src/shared/all.ts` (shared
+      components), its `package.json` `exports` entry is synced (`make sync-exports`), and imports
       follow the dependency direction.
 - [ ] Code, comments and docs are in English, with no emojis; nothing is copied from material-web.
 - [ ] `make vrt-update` ran and the changed baselines were reviewed.
