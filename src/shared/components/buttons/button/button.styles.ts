@@ -1,4 +1,11 @@
 import { css } from 'lit';
+import {
+  focusRing,
+  focusRingForcedColors,
+  stateLayerBox,
+  stateLayerOpacity,
+  touchTargetBox,
+} from '../../../styles/index.ts';
 import { compVar, sysVar } from '../../../tokens/index.ts';
 
 // Private custom properties (`--_*`) carry the per-variant and per-size defaults. The public hooks
@@ -142,23 +149,13 @@ export const buttonStyles = css`
   /* State layer: the label color painted over the container. Every variant uses it, so a container
      color overridden with --su3-comp-button-container-color still reacts to hover and press. */
   .control::before {
-    content: '';
-    position: absolute;
-    inset: calc(-1 * ${compVar('button-border-width', sysVar('size-border-width'))});
-    border-radius: inherit;
-    background-color: currentcolor;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity ${sysVar('motion-duration-fast')} ${sysVar('motion-easing-standard')};
+    ${stateLayerBox(`calc(-1 * ${compVar('button-border-width', sysVar('size-border-width')).cssText})`)}
   }
 
   /* Extends the hit area to the minimum size on touch screens without changing the visible size. */
   @media (pointer: coarse) {
     .control::after {
-      content: '';
-      position: absolute;
-      inset-block: min(0px, calc((100% - ${sysVar('size-hit-area')}) / 2));
-      inset-inline: 0;
+      ${touchTargetBox}
     }
   }
 
@@ -167,22 +164,20 @@ export const buttonStyles = css`
   }
 
   .control:hover:not(:disabled, [aria-disabled='true'])::before {
-    opacity: calc(var(--_overlay) * ${sysVar('state-hover-opacity')});
+    ${stateLayerOpacity.hover}
   }
 
   .control:focus-visible:not(:disabled, [aria-disabled='true'])::before {
-    opacity: calc(var(--_overlay) * ${sysVar('state-focus-opacity')});
+    ${stateLayerOpacity.focus}
   }
 
   .control:active:not(:disabled, [aria-disabled='true'])::before {
-    opacity: calc(var(--_overlay) * ${sysVar('state-pressed-opacity')});
+    ${stateLayerOpacity.pressed}
   }
 
   /* Focus stays visible on soft-disabled buttons: they are meant to be reachable. */
   .control:focus-visible {
-    outline: ${compVar('button-focus-ring-width', sysVar('size-focus-ring-width'))} solid
-      ${compVar('button-focus-ring-color', sysVar('color-focus-ring'))};
-    outline-offset: ${compVar('button-focus-ring-offset', sysVar('size-focus-ring-offset'))};
+    ${focusRing('button')}
   }
 
   .control:disabled,
@@ -212,7 +207,7 @@ export const buttonStyles = css`
     }
 
     .control:focus-visible {
-      outline-color: Highlight;
+      ${focusRingForcedColors}
     }
 
     /* The state layer is not visible in forced colors, so hovering changes the border instead. */

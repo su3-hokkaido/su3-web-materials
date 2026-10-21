@@ -111,8 +111,11 @@ docs/
   `su3-web-materials/button.js` (the component entry, registers `<su3-button>`) or a catch-all
   `su3-web-materials/all.js`. `sideEffects` in `package.json` lists the registering entries.
 - Behavior shared by many elements (form association, ARIA delegation) lives in
-  `src/shared/behaviors/` as base classes (`FormAssociatedElement`, `FormSubmitterElement`); visual helpers (ripple, focus ring, elevation) are public
-  components in the `foundation` category.
+  `src/shared/behaviors/` as base classes (`FormAssociatedElement`, `FormSubmitterElement`,
+  `FormCheckableElement`). **Visual helpers (Decision, Phase 7)**: the state layer, focus ring and
+  touch target are CSS fragments in `src/shared/styles/` (built from tokens), not elements: they must
+  act on a component's own box (`::before`, `outline`, `::after`), and the design language uses state
+  layers, so there is no ripple. There is no `foundation` component category for now.
 
 ---
 
@@ -533,7 +536,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
 5. **Playwright VRT** (done, §17): Docker image, baselines, strict comparison, media-feature spec.
 6. **GitHub Actions** (done, §17): CI -> VRT -> consumers -> deploy to Workers -> release, with the
    fork guards.
-7. **MVP components**: `foundation` (ripple, focus-ring, elevation, extracted as they are needed),
+7. **MVP components** (done, §17): shared style fragments (state layer, focus ring, touch target),
    IconButton, Checkbox, Switch, TextField, Divider.
 8. **README / README_JA / CLAUDE.md / catalog pages**; first manual npm publish.
 9. **After the MVP** (one task each, in priority order): Card, Badge, Segmented button, Navigation
@@ -763,3 +766,20 @@ and explain the reasoning in the PR description.
     `.changeset/initial-release.md` if the first release should differ. Required status check names
     for branch protection are `Checks` (CI), `Visual regression test` and `Consumer check`; when CI
     runs as the deploy workflows' `checks` job it is reported as `CI / Checks`.
+
+- **Phase 7 completed (2026-10-21)**: the MVP components are in. Details:
+  `docs/2026-10-21_06_phase7-mvp-components/`.
+  - Delivered: `src/shared/styles/{state-layer,focus-ring,touch-target}.ts` (the Button was refactored
+    onto them); `FormAssociatedElement` gained the validity API, `setValidityState`, reset and restore
+    hooks, `delegatesFocus` and `accessibleName`; the new `FormCheckableElement`; `su3-checkbox`,
+    `su3-switch`, `su3-text-field`, `su3-icon-button` and `su3-divider`; sys sizes `checkbox`,
+    `switch-track-*`, `switch-thumb`; two extra contrast pairs on `surface-sunken`.
+  - Verified: the 40 pre-existing VRT baselines are byte-identical after the Button refactor; new
+    baselines reviewed by viewing the images (light and dark, desktop and mobile); axe reports 0
+    violations in 38 stories x 2 themes; `check:package` and `check:consumers` pass with the new
+    entries; mutation checks on the form base class.
+  - Decisions: foundation parts are style fragments, not elements (no ripple, no `foundation`
+    category); labels sit above the text field (no floating label); the checkbox and switch wrap a
+    native hidden input for accessibility and keyboard handling, and `change` is re-dispatched on the
+    host; the `checked` attribute is the initial state and reset restores it; everything ships in the
+    initial changeset.

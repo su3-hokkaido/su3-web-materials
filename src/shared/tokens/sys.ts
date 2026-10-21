@@ -74,6 +74,12 @@ export const sysSize = {
   'icon-lg': '1.5rem',
   /** Minimum hit area on coarse pointers. */
   'hit-area': '2.75rem',
+  /** The box of a checkbox. */
+  checkbox: '1.25rem',
+  /** The track and thumb of a switch. */
+  'switch-track-width': '2.75rem',
+  'switch-track-height': '1.5rem',
+  'switch-thumb': '1rem',
   'border-width': '1px',
   'focus-ring-width': '2px',
   'focus-ring-offset': '2px',
