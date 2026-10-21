@@ -9,7 +9,7 @@ export default defineConfig({
   test: {
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.ts', 'scripts/lib/**/*.ts'],
+      include: ['src/**/*.ts', 'scripts/lib/**/*.ts', 'tests/vrt/stories.ts'],
       exclude: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/**/index.ts'],
       // Set just below the Phase 1 results (98.6% statements, 97.1% branches); raise them as the
       // suite grows rather than letting them drift down.
@@ -33,7 +33,7 @@ export default defineConfig({
         test: {
           name: 'conventions',
           // Node-side checks: repository conventions and the build scripts' helpers.
-          include: ['src/conventions.test.ts', 'scripts/**/*.test.ts'],
+          include: ['src/conventions.test.ts', 'scripts/**/*.test.ts', 'tests/vrt/**/*.test.ts'],
           environment: 'node',
         },
       },

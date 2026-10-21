@@ -121,6 +121,46 @@ describe('rendering', () => {
   });
 });
 
+describe('icon-only', () => {
+  const iconOnly =
+    '<su3-button aria-label="Add"><svg slot="leading" width="20" height="20" aria-hidden="true"></svg></su3-button>';
+
+  it('is square with the icon centered, because there is no label to add a gap', async () => {
+    const host = await render(iconOnly);
+    const control = style(host);
+    expect(control.width).toBe(control.height);
+    const box = host.shadowRoot?.querySelector('[part="button"]')?.getBoundingClientRect();
+    const icon = host.querySelector('svg')?.getBoundingClientRect();
+    expect((icon?.left ?? 0) + (icon?.width ?? 0) / 2).toBeCloseTo(
+      (box?.left ?? 0) + (box?.width ?? 0) / 2,
+      0,
+    );
+  });
+
+  it('hides the label wrapper only when there is no label content', async () => {
+    const withoutLabel = await render(iconOnly);
+    expect(
+      getComputedStyle(withoutLabel.shadowRoot?.querySelector('[part="label"]') as Element).display,
+    ).toBe('none');
+
+    const withLabel = await render(
+      '<su3-button><svg slot="leading" width="20" height="20"></svg>Save</su3-button>',
+    );
+    expect(
+      getComputedStyle(withLabel.shadowRoot?.querySelector('[part="label"]') as Element).display,
+    ).not.toBe('none');
+  });
+
+  it('shows the label as soon as content is added', async () => {
+    const host = await render(iconOnly);
+    host.append('Add');
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await host.updateComplete;
+    expect(host.hasLabel).toBe(true);
+    expect(style(host).width).not.toBe(style(host).height);
+  });
+});
+
 describe('variants (built-in light values)', () => {
   const cases = [
     ['filled', 'rgb(0, 96, 113)', 'rgb(228, 250, 255)'],

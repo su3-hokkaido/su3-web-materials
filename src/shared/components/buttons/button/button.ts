@@ -70,6 +70,7 @@ export class Su3Button extends FormSubmitterElement {
     download: {},
     rel: {},
     accessibleName: { attribute: 'aria-label' },
+    hasLabel: { state: true },
   };
 
   /** Emphasis level. */
@@ -103,6 +104,9 @@ export class Su3Button extends FormSubmitterElement {
    */
   declare accessibleName: string | null;
 
+  /** Whether the default slot has content; an icon-only button has none and is laid out square. */
+  declare hasLabel: boolean;
+
   constructor() {
     super();
     this.variant = 'filled';
@@ -113,6 +117,11 @@ export class Su3Button extends FormSubmitterElement {
     this.download = '';
     this.rel = '';
     this.accessibleName = null;
+    this.hasLabel = true;
+  }
+
+  protected override willUpdate(): void {
+    this.hasLabel = hasLabelContent(this);
   }
 
   protected override get canPerformFormAction(): boolean {
@@ -120,9 +129,14 @@ export class Su3Button extends FormSubmitterElement {
   }
 
   protected override render(): TemplateResult {
+    // The label wrapper is hidden without content, so an icon-only button has no empty flex item
+    // (which would add a gap) and `icon-only` can lay it out square.
     const content = html`<slot name="leading"></slot>
-      <span class="label" part="label"><slot></slot></span>
+      <span class="label" part="label" ?hidden=${!this.hasLabel}
+        ><slot @slotchange=${this.#onLabelSlotChange}></slot
+      ></span>
       <slot name="trailing"></slot>`;
+    const controlClass = this.hasLabel ? 'control' : 'control icon-only';
     const unavailable = this.isDisabled || this.softDisabled;
 
     if (this.href) {
@@ -130,7 +144,7 @@ export class Su3Button extends FormSubmitterElement {
       // role is explicit and a soft-disabled link gets a tabindex to stay reachable. A hard-disabled
       // link is intentionally left out of the tab order.
       return html`<a
-        class="control"
+        class=${controlClass}
         part="button"
         href=${unavailable ? nothing : this.href}
         target=${this.target || nothing}
@@ -146,7 +160,7 @@ export class Su3Button extends FormSubmitterElement {
     }
 
     return html`<button
-      class="control"
+      class=${controlClass}
       part="button"
       type="button"
       ?disabled=${this.isDisabled}
@@ -157,6 +171,10 @@ export class Su3Button extends FormSubmitterElement {
       ${content}
     </button>`;
   }
+
+  #onLabelSlotChange = (): void => {
+    this.hasLabel = hasLabelContent(this);
+  };
 
   /**
    * Swallows clicks on the inner control while unavailable, so neither host listeners nor the link
@@ -169,6 +187,15 @@ export class Su3Button extends FormSubmitterElement {
       event.stopPropagation();
     }
   };
+}
+
+/** Text or an element without a `slot` attribute: what the default slot shows. */
+function hasLabelContent(host: HTMLElement): boolean {
+  return [...host.childNodes].some((node) =>
+    node instanceof Text
+      ? node.data.trim() !== ''
+      : node instanceof Element && (node.getAttribute('slot') ?? '') === '',
+  );
 }
 
 declare global {

@@ -8,6 +8,7 @@ import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { PUBLISH_FIELDS, expectedExports, listComponents } from '../scripts/lib/package-exports.ts';
 import { PORTAL_PLACEHOLDER } from '../scripts/lib/storybook-site.ts';
+import { THEMES, VIEWPORTS, parseVrtParameters } from '../tests/vrt/stories.ts';
 import { declaredProperties, themeColorOverrides } from '../scripts/lib/theme-css.ts';
 import { findContrastFailures, resolveColorRoles } from './shared/tokens/contrast.ts';
 import { sysTokenEntries } from './shared/tokens/css.ts';
@@ -326,7 +327,7 @@ describe('site delivery (docs/project_plan.md section 4)', () => {
   it('ends the Dockerfile with the nginx preview stage, so an untargeted build produces it', () => {
     const dockerfile = read(root, 'Dockerfile');
     const stages = [...dockerfile.matchAll(/^FROM \S+ AS (\S+)$/gm)].map((match) => match[1]);
-    expect(stages).toEqual(['base', 'dev', 'build', 'preview']);
+    expect(stages).toEqual(['base', 'dev', 'build', 'vrt', 'preview']);
     expect(dockerfile).toContain('COPY deploy/local/nginx.conf /etc/nginx/conf.d/default.conf');
     expect(read(root, 'compose.yaml')).toMatch(/preview:[\s\S]*profiles: \[preview\]/);
   });
@@ -358,6 +359,83 @@ describe('package (docs/project_plan.md section 9)', () => {
     const all = read(srcDir, 'shared/all.ts');
     for (const { category, name } of listComponents(root)) {
       expect(all, name).toContain(`'./components/${category}/${name}/index.ts'`);
+    }
+  });
+});
+
+/** Reads the `vrt: { ... }` object literal of a story file, which only holds booleans and strings. */
+function readVrtParameters(source: string): unknown {
+  const literal = /\bvrt:\s*(\{[^}]*\})/.exec(source)?.[1];
+  if (literal === undefined) return undefined;
+  return JSON.parse(
+    literal
+      .replace(/'/g, '"')
+      .replace(/([A-Za-z]+)\s*:/g, '"$1":')
+      .replace(/,(\s*[}\]])/g, '$1'),
+  ) as unknown;
+}
+
+describe('visual regression test (docs/project_plan.md section 11)', () => {
+  const config = read(root, 'playwright.config.ts');
+  const compose = read(root, 'compose.yaml');
+  const makefile = read(root, 'Makefile');
+
+  it('has one Playwright project per viewport, named like parameters.vrt.viewports', () => {
+    const names = [...config.matchAll(/\{ name: '([^']+)'/g)].map((match) => match[1]);
+    expect(names).toEqual([...VIEWPORTS]);
+  });
+
+  it('keeps baselines per viewport project, on Linux only (no platform suffix)', () => {
+    expect(config).toContain(
+      "snapshotPathTemplate: '{testDir}/__screenshots__/{projectName}/{arg}{ext}'",
+    );
+    expect(config).toContain("animations: 'disabled'");
+  });
+
+  it('runs the suite from the vrt compose service pinned to amd64, behind its profile', () => {
+    const service = /\n {2}vrt:\n([\s\S]*?)\n\S/.exec(compose)?.[1] ?? '';
+    expect(service).toContain('platform: linux/amd64');
+    expect(service).toContain('profiles: [vrt]');
+    expect(service).toContain('target: vrt');
+    expect(service).toContain('./dist/storybook:/app/dist/storybook:ro');
+    expect(service).toContain('./tests/vrt:/app/tests/vrt');
+  });
+
+  it('offers make vrt and make vrt-update, both after building every Storybook', () => {
+    for (const target of ['vrt', 'vrt-update']) {
+      const recipe =
+        new RegExp(`^${target}:.*\\n((?:\\t.*\\n|@.*\\n)+)`, 'm').exec(makefile)?.[1] ?? '';
+      expect(recipe, target).toContain('pnpm run build-storybook:all');
+      expect(recipe, target).toContain('--profile vrt run --rm --build vrt');
+    }
+    expect(makefile).toContain('--update-snapshots=changed');
+  });
+
+  it('uses only valid parameters.vrt in the stories', () => {
+    const storyFiles = sourceFiles(srcDir).filter((file) => file.endsWith('.stories.ts'));
+    expect(storyFiles.length).toBeGreaterThan(0);
+    for (const file of storyFiles) {
+      const parameters = readVrtParameters(readFileSync(file, 'utf8'));
+      expect(() => parseVrtParameters(parameters), relative(root, file)).not.toThrow();
+    }
+  });
+
+  it('keeps baselines as {viewport}/{scope}/{storyId}-{theme}.png with a known viewport and scope', () => {
+    const base = join(root, 'tests/vrt/__screenshots__');
+    if (!existsSync(base)) return;
+    const scopes = new Set(['shared', ...products]);
+    const files = readdirSync(base, { recursive: true, encoding: 'utf8' }).filter((file) =>
+      file.endsWith('.png'),
+    );
+    expect(files.length).toBeGreaterThan(0);
+    for (const file of files) {
+      const [viewport, scope, name, ...rest] = file.split('/');
+      expect(VIEWPORTS as readonly string[], file).toContain(viewport);
+      expect(scopes, file).toContain(scope);
+      expect(rest, file).toEqual([]);
+      expect(name, file).toMatch(
+        new RegExp(`^[a-z0-9-]+(--[a-z0-9-]+)?-(${THEMES.join('|')})\\.png$`),
+      );
     }
   });
 });

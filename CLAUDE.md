@@ -76,7 +76,11 @@ Summary of `docs/project_plan.md` §3, §4, §10 and §13:
   `/{productId}/c/{category}/{component}` (`deploy/cloudflare/_redirects` and
   `deploy/local/nginx.conf` must stay equivalent, which the conventions test checks).
 - Optional per-story VRT settings go in `parameters.vrt`:
-  `{ disable?: boolean; viewports?: ('desktop' | 'mobile')[] }` (validated by `tests/vrt/stories.ts`).
+  `{ disable?: boolean; viewports?: ('desktop' | 'mobile')[]; themed?: boolean }` (validated by
+  `tests/vrt/stories.ts` and the conventions test). Shared stories are baselined from the default
+  product `sample`; set `themed: true` on a story that shows a theme's effect so other products
+  capture it too. The comparison is strict (`threshold: 0.01`), so `make vrt` is meaningful only in
+  the Docker image: run `make vrt-update` and **look at the changed images** before committing.
 - After a visual change or a new story, run `make vrt-update` and review the changed baselines in
   `tests/vrt/__screenshots__/`; delete the baselines of removed or renamed stories, and of stories or viewports you exclude
   with `parameters.vrt` (the orphan check cannot see those).

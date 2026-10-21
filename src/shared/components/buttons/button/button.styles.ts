@@ -122,6 +122,16 @@ export const buttonStyles = css`
     display: inline-block;
   }
 
+  .label[hidden] {
+    display: none;
+  }
+
+  /* No label: a square button whose icon is centered (no label item, so no extra gap). */
+  .control.icon-only {
+    min-width: ${compVar('button-height', 'var(--_height)')};
+    padding-inline: 0;
+  }
+
   slot[name='leading']::slotted(*),
   slot[name='trailing']::slotted(*) {
     flex: none;

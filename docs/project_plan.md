@@ -398,13 +398,30 @@ ancestor, implemented by redefining `--su3-sys-color-*`. Switchable from the Sto
 - `toHaveScreenshot` against the **built Storybook** (the output of `make preview`). Stories are
   enumerated from Storybook's `index.json`; each is opened at
   `iframe.html?id=<storyId>&viewMode=story`.
-- Per-story settings: `parameters.vrt = { disable?: boolean; viewports?: ('desktop'|'mobile')[] }`;
+- Per-story settings:
+  `parameters.vrt = { disable?: boolean; viewports?: ('desktop'|'mobile')[]; themed?: boolean }`;
   unknown keys or values fail the run.
-- Stories under `src/shared` are in every product's build and are captured once, from the first
-  product. Baselines: `tests/vrt/__screenshots__/{viewport}/{shared|productId}/{storyId}-{theme}.png`.
-  A baseline with no matching story fails the run.
+- **Which stories (decision, Phase 5; refines the earlier "captured once, from the first
+  product")**: the shared stories (`src/shared`) are in every product's build and differ only by
+  the theme. They are captured from the **default product `sample`** under `shared/`; any other
+  product captures only the shared stories that set `parameters.vrt.themed: true` (stories that
+  show a theme's effect, such as the Button `Variants` story), under `{productId}/`; product-only
+  stories are always captured under their product. Baselines:
+  `tests/vrt/__screenshots__/{viewport}/{shared|productId}/{storyId}-{theme}.png`. A baseline with
+  no matching story fails the run; a missing `sample` build is an error.
 - Fixed conditions: Chromium; desktop (`Desktop Chrome` 1280x720) and mobile (`Pixel 7`); animations
-  disabled; wait for fonts; light and dark themes.
+  disabled; light and dark themes. A story is captured only when Storybook has finished rendering,
+  the fonts are ready, every `su3-*` element's `updateComplete` has resolved, and **every `su3-*`
+  tag used is defined** (an undefined element would be baselined as plain text).
+- **Strict comparison**: `threshold: 0.01`, `maxDiffPixels: 0`. Playwright's default threshold
+  (0.2) accepted `#00798e` for `#006071`, so a theme regression went unnoticed; baselines and runs
+  come from the same image and are deterministic (two runs, and a regenerated baseline, are
+  byte-identical). A plain run never writes baselines (`updateSnapshots: 'none'`);
+  `make vrt-update` does.
+- `tests/vrt/media.spec.ts` checks what Vitest Browser Mode cannot emulate, with Playwright's media
+  emulation on the same build: `prefers-reduced-motion` (transitions off), `forced-colors`
+  (system-color borders, focus ring, hover and disabled colors) and `pointer: coarse` (true on the
+  touch `mobile` project; the hit area is 44px there and absent with a mouse).
 - Runs inside the official Playwright Docker image whose tag equals the `@playwright/test` version
   (checked by `src/conventions.test.ts`), pinned to `linux/amd64`. Baselines are committed.
 - `make vrt-update` refreshes baselines; PRs that change them must have the diff images reviewed.
@@ -481,7 +498,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
 4. **Package build** (done, §17): unbundled tsdown output, derived `exports`, `tokens.css`, themes,
    `custom-elements.json`, `make new-product`, and consumer proofs of concept (plain HTML, Vite,
    React 19, Vue).
-5. **Playwright VRT** (Docker, baselines).
+5. **Playwright VRT** (done, §17): Docker image, baselines, strict comparison, media-feature spec.
 6. **GitHub Actions**: CI -> VRT -> deploy to Workers -> release, with the fork guards.
 7. **MVP components**: `foundation` (ripple, focus-ring, elevation, extracted as they are needed),
    IconButton, Checkbox, Switch, TextField, Divider.
@@ -655,3 +672,32 @@ and explain the reasoning in the PR description.
     `esm-only` profile on purpose (CommonJS consumers use a dynamic import). Consumers of React need
     their own JSX typing for the custom element (shown in `tests/consumers/react`); a documented
     snippet belongs in the README (Phase 8).
+- **Phase 5 completed (2026-10-21)**: the visual regression test and the media-feature checks work in
+  the `linux/amd64` Playwright image. Details: `docs/2026-10-21_04_phase5-vrt/`.
+  - Delivered: `playwright.config.ts`; the Dockerfile `vrt` stage (tag equal to `@playwright/test`),
+    the compose `vrt` service and `make vrt` / `make vrt-update`; `tests/vrt/{stories,site}.ts`,
+    `stories.spec.ts`, `media.spec.ts` and the unit tests of the helpers; 40 baselines (20 per
+    viewport: 18 `shared`, 2 `acme`); convention checks for the config, the compose service, the
+    Makefile targets, `parameters.vrt` in every story and the baseline layout.
+  - Feasibility: Chromium 156 runs under amd64 emulation on this Apple Silicon machine (about 1.3
+    seconds to start and capture; a full `make vrt` is about 1.3 minutes), so no CI-only fallback is
+    needed. Two runs and a regenerated baseline are byte-identical.
+  - **Bugs the VRT found**: (1) the built Storybook never defined `<su3-button>`: Vite applied the
+    package's `sideEffects` field to this project's own `src` modules and dropped each story's
+    `import './index.ts'`; fixed with a Vite plugin in `.storybook/main.ts` that keeps side effects
+    for `src` (a build option cannot, Vite sets the flag per module), and the VRT now fails on an
+    undefined `su3-*` tag; (2) an icon-only button was not centered (an empty label item still got a
+    `gap`); fixed with a `hasLabel` state (the label wrapper is hidden, the control is `icon-only` and
+    square) and tests. The same `sideEffects` pitfall had already hit tsdown in Phase 4.
+  - Verified by mutation: a changed token color fails 14 tests with 14 diff images (after the
+    threshold fix; before it, the change passed); a renamed story fails the orphan check; a missing
+    baseline fails `make vrt` without being written and is recreated byte-identically by
+    `make vrt-update`; breaking the coarse-pointer or reduced-motion CSS fails `media.spec.ts`;
+    removing the forced-colors CSS fails the disabled-state test (Chromium adapts borders, focus ring
+    and hover on its own, so those tests pin the behavior).
+  - Decisions: `themed` instead of capturing every shared story per product; VRT stays out of `ci`
+    (emulation cost) and gets its own workflow in Phase 6; media checks live in Playwright because
+    `pointer: coarse` needs a touch device context.
+  - Notes: a transient Docker Hub timeout failed one `make vrt --build` (retry); a baseline review
+    means viewing the images, not trusting the green run (the first baselines showed unstyled text and
+    exposed bug 1).
