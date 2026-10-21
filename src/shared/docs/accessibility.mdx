@@ -1,0 +1,43 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Foundation/Accessibility" />
+
+# Accessibility
+
+The rules below hold for every component. The Storybook accessibility addon (axe) runs against every
+story, and a story with a violation is not accepted.
+
+## Native semantics first
+
+Components render a real `<button>`, `<input>` or link inside the Shadow DOM and expose it with
+`delegatesFocus`, so the browser provides the role, keyboard handling and focus behavior. Form
+controls are form-associated through `ElementInternals`.
+
+## Names
+
+Give controls without visible text an accessible name through `aria-label` on the element, for
+example an icon button or a checkbox without a label. The name is forwarded to the inner control.
+
+## Keyboard and focus
+
+- Every interactive control is reachable with Tab and operated with Space or Enter as natives are.
+- The focus ring appears for keyboard focus (`:focus-visible`) and stays visible in forced colors.
+- Soft-disabled buttons (`soft-disabled`) stay focusable so their state can be discovered.
+
+## Color and contrast
+
+Text roles meet 4.5:1 and non-text indicators (borders, focus ring, selected state) meet 3:1, in
+light and dark. The ratios are verified numerically for the default tokens and for every product
+theme.
+
+## Motion, pointers and forced colors
+
+- `prefers-reduced-motion: reduce` turns transitions off.
+- On coarse pointers (touch) controls keep a 44px minimum hit area without changing their visible
+  size.
+- `forced-colors: active` replaces the palette with system colors; borders and focus rings remain.
+
+## Validation messages
+
+Invalid form controls expose a message through the validity API, and the text field shows it as
+error text announced with the field.

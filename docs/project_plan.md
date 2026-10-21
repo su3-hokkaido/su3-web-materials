@@ -491,7 +491,8 @@ checks structural identity.
 
 - Each component has a Storybook docs page generated from `custom-elements.json` plus hand-written
   MDX for usage guidance, accessibility notes, and token tables.
-- Foundation pages: Getting started, Theming (tokens, dark mode, productId example), Accessibility
+- Foundation pages (**Phase 8**: MDX files in `src/shared/docs/`, included by the Storybook
+  `stories` glob, titled `Foundation/...`, listed first by `storySort`): Getting started, Theming (tokens, dark mode, productId example), Accessibility
   principles, Browser support, Design language (`docs/design/`).
 
 ### Other
@@ -538,7 +539,8 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
    fork guards.
 7. **MVP components** (done, §17): shared style fragments (state layer, focus ring, touch target),
    IconButton, Checkbox, Switch, TextField, Divider.
-8. **README / README_JA / CLAUDE.md / catalog pages**; first manual npm publish.
+8. **README / README_JA / CLAUDE.md / catalog pages** (done, §17); the first manual npm publish is
+   the owner's step, documented in the README.
 9. **After the MVP** (one task each, in priority order): Card, Badge, Segmented button, Navigation
    bar / drawer, Snackbar, Tooltip, Top app bar, Select, Dialog, Menu, then pickers and Data table.
 
@@ -568,7 +570,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
       (`acme`, Phase 3)
 - [x] `custom-elements.json` is published and the Storybook docs are generated from it (the
       manifest is in the package; the npm publish itself is Phase 8)
-- [ ] No source, token or documentation text from material-web is present; `THIRD_PARTY_NOTICES.md`
+- [x] No source, token or documentation text from material-web is present; `THIRD_PARTY_NOTICES.md`
       lists every bundled font/icon and its license
 
 ---
@@ -783,3 +785,16 @@ and explain the reasoning in the PR description.
     native hidden input for accessibility and keyboard handling, and `change` is re-dispatched on the
     host; the `checked` attribute is the initial state and reset restores it; everything ships in the
     initial changeset.
+- **Phase 8 completed (2026-10-21)**: documentation. Details:
+  `docs/2026-10-21_07_phase8-readme-catalog-pages/`.
+  - Delivered: `README.md` with the nine sections of §12 (snippets mirror `tests/consumers`, including
+    the React JSX typing owed since Phase 4), `README_JA.md` (checked with the `readme-sync` agent),
+    `THIRD_PARTY_NOTICES.md` (nothing bundled; `lit` is the runtime dependency), the five Foundation
+    MDX pages and the `storySort` order; the leftover `README_sample_from_another_repo.md` was
+    deleted.
+  - Verified: `make build-storybook` lists the five docs entries and the same 38 stories and
+    clean-URL redirects; axe reports 0 violations on the Foundation pages in both themes. Component
+    usage notes were already in each component's JSDoc, so no story changed.
+  - Notes: the live catalog URL in the README is a placeholder for the owner's deployment. The first
+    npm publish, the Cloudflare and GitHub setup and the trusted publisher are the owner's steps
+    (README, "Release flow" and "One-time setup").

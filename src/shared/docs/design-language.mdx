@@ -1,0 +1,41 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Foundation/Design language" />
+
+# Design language: Snowfield
+
+Snowfield is the original visual language of this catalog. It defines the values behind the
+`--su3-ref-*` and `--su3-sys-*` tokens and is not derived from any published design system.
+
+## Principles
+
+1. **Calm and precise.** Cool, low-chroma neutrals carry the interface; one accent color marks what
+   can be acted on.
+2. **Flat first.** Hierarchy comes from surface tone and borders; shadows are reserved for things
+   that float.
+3. **Accessible by construction.** Text roles meet 4.5:1 and non-text indicators meet 3:1, in light
+   and dark.
+4. **Themable by tokens.** A product re-themes the catalog by overriding `--su3-sys-*` only.
+
+## Color
+
+The seed is an ice teal (about `#0096af`). Three ramps are generated in OKLCH (accent, neutral and
+danger) and stored as hex. Components use **roles**, never ramp steps: `surface`, `surface-raised`,
+`surface-sunken`, `text`, `text-muted`, `border`, `border-strong`, `accent` (with hover and active),
+`on-accent`, `accent-subtle`, `on-accent-subtle` and `danger`.
+
+## Shape, space and size
+
+- Space uses a 4px base unit (`--su3-sys-space-{1..8}`).
+- Control heights are 32px (`sm`), 40px (`md`) and 48px (`lg`); icons are 16, 20 and 24px.
+- A checkbox box is 20px and a switch track is 44 by 24px.
+- Shapes are scale tokens (`--su3-sys-shape-*`) up to a pill.
+
+## Typography and motion
+
+System font stacks only; nothing is bundled. Sizes are in `rem`, so user font settings scale the
+interface. Motion uses short durations with a standard easing and respects
+`prefers-reduced-motion`.
+
+The full specification, including every role value in light and dark, is
+`docs/design/design-language.md` in the repository.

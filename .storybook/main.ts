@@ -49,6 +49,7 @@ const keepSourceSideEffects: Plugin = {
 
 const config: StorybookConfig = {
   stories: [
+    '../src/shared/docs/*.mdx',
     '../src/shared/**/*.stories.ts',
     ...(hasProductStories ? [`../src/products/${productId}/**/*.stories.ts`] : []),
   ],
