@@ -7,8 +7,8 @@ tokens), shown in Storybook, deployed per product to Cloudflare Workers Static A
 to npm. It is built to be reused: a contractor or employee who joins a team without a UI component
 catalog can fork it, rename it and have a themable, tested, documented catalog the same day.
 
-Live catalog: `https://<your-worker>.workers.dev/` (the address of your own deployment; see
-[Reusing this repository](#reusing-this-repository-for-another-team)).
+Live catalog: https://su3-web-materials.su3-hokkaido-2210.workers.dev/ (a fork deploys its own
+copy; see [Reusing this repository](#reusing-this-repository-for-another-team)).
 
 Components: `su3-button`, `su3-icon-button`, `su3-checkbox`, `su3-switch`, `su3-text-field` and
 `su3-divider`. Form controls are form-associated (`ElementInternals`): they submit, validate, reset
