@@ -130,10 +130,14 @@ A new or changed component is done when:
   scripts on the host (browser tests there need `pnpm exec playwright install chromium` once). The
   dev image contains Chromium, so `make test` and `make ci` run the browser tests in the container.
   Do not read or edit `.env.docker`; it is a local copy of `.env.docker.sample`.
-- GitHub Actions (`.github/workflows/`, `docs/project_plan.md` §8): CI runs `pnpm run ci` and the
-  Docker VRT on every PR. Pin any new action to a full commit SHA with a `# vX.Y.Z` comment (Dependabot
-  updates them), keep `permissions` minimal, and keep Cloudflare specifics in `_deploy.yml` and
-  `deploy/cloudflare/`.
+- GitHub Actions (`.github/workflows/`, `docs/project_plan.md` §8): `ci.yml` (`pnpm run ci` with
+  Chromium installed) runs on every PR and, as a reusable workflow, as the `checks` job of the
+  deploy workflows; `vrt.yml` and `consumers.yml` are separate. Pin any new action to a full commit
+  SHA with a `# vX.Y.Z` comment (Dependabot updates them), keep `permissions` minimal and every job's
+  `timeout-minutes` set, and keep Cloudflare specifics in `_deploy.yml` and `deploy/cloudflare/`
+  (the deploy script, `CLOUDFLARE_WORKER_NAME`). `src/conventions.test.ts` checks all of this and
+  `actionlint` (Docker) validates syntax. The owner's one-time setup (Environments, secrets,
+  variables, npm trusted publisher) is in `docs/2026-10-21_05_phase6-github-actions/design.md`.
 - The Node.js major is in `.nvmrc`, `devEngines.runtime` and the Dockerfile `NODE_VERSION`; never
   add `engines` (it would be published). `src/conventions.test.ts` checks this.
 - Hidden folders (e.g. `.tmp`) may be missed by directory listings; find them with `Glob`
@@ -151,7 +155,7 @@ A new or changed component is done when:
   `wrangler kv`, `wrangler r2`, `wrangler d1`, and mutating Cloudflare MCP tools (`*_create`, `*_delete`,
   `*_update`, `*_edit`, `d1_database_query`). Local `wrangler dev` and builds are allowed.
 - **Publishing / releases**: `npm publish`, `pnpm publish`, `changeset publish` (in any form),
-  `npm dist-tag`, `npm unpublish`, `npm deprecate`, `docker push`, `make deploy*`, `make release*`. `changeset` (creating a changeset file) and `changeset version`
+  `npm dist-tag`, `npm unpublish`, `npm deprecate`, `docker push`, `make deploy*`, `make release*`, `node deploy/cloudflare/deploy.ts` and `pnpm run release` (both change remote state). `changeset` (creating a changeset file) and `changeset version`
   only change local files and are allowed.
 - **Remote GitHub changes**: `gh pr create/merge/close/edit`, `gh release`, `gh api`, `gh secret`,
   `gh variable`, `gh workflow run`, `gh repo create/edit/delete`, `gh issue create/edit/close`,

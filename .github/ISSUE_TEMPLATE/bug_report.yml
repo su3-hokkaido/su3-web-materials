@@ -27,4 +27,4 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: Browser, OS, and for package consumers the framework and Tailwind CSS setup.
+      description: Browser, OS, and for package consumers the framework and bundler setup (for example Vite, React 19, Vue or plain HTML).

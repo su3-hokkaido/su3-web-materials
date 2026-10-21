@@ -1,8 +1,12 @@
-# Reusable deploy of every product's Storybook (docs/project_plan.md section 8). The Cloudflare
-# specifics live here and in deploy/cloudflare/; switching clouds replaces these two.
+# Reusable deploy of every product's Storybook to Cloudflare Workers Static Assets
+# (docs/project_plan.md sections 4 and 8). The Cloudflare specifics live here and in
+# deploy/cloudflare/; switching clouds replaces these.
+#
+# production  -> the Worker named by the repository variable CLOUDFLARE_WORKER_NAME
+# development -> a second, persistent preview Worker, `${CLOUDFLARE_WORKER_NAME}-dev`
 #
 # Configuration (template copies and forks have none, so the deploy is skipped with a notice):
-#   - repository variable CLOUDFLARE_PROJECT_NAME (repository level: a job's `if` is evaluated
+#   - repository variable CLOUDFLARE_WORKER_NAME (repository level: a job's `if` is evaluated
 #     before its environment applies)
 #   - secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (repository or environment level)
 name: Deploy (reusable)
@@ -11,11 +15,7 @@ on:
   workflow_call:
     inputs:
       environment:
-        description: GitHub Environment of the deployment (development or production).
-        required: true
-        type: string
-      branch:
-        description: Branch the deployment is for; the Pages production branch (main) is production.
+        description: GitHub Environment and deploy target (development or production).
         required: true
         type: string
     # Optional here: GitHub uses the deploy job's environment secrets over values passed by the
@@ -32,19 +32,19 @@ permissions:
 jobs:
   not-configured:
     name: Deploy (not configured)
-    if: vars.CLOUDFLARE_PROJECT_NAME == ''
+    if: vars.CLOUDFLARE_WORKER_NAME == ''
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Explain the skip
         run: >-
           echo "::notice title=Deploy skipped::Set the repository variable
-          CLOUDFLARE_PROJECT_NAME and the secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID
-          to deploy to Cloudflare Pages."
+          CLOUDFLARE_WORKER_NAME and the secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID
+          to deploy to Cloudflare Workers."
 
   deploy:
-    name: Deploy to Cloudflare Pages
-    if: vars.CLOUDFLARE_PROJECT_NAME != ''
+    name: Deploy to Cloudflare Workers
+    if: vars.CLOUDFLARE_WORKER_NAME != ''
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment:
@@ -71,6 +71,6 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_PROJECT_NAME: ${{ vars.CLOUDFLARE_PROJECT_NAME }}
-          BRANCH: ${{ inputs.branch }}
-        run: deploy/cloudflare/deploy.sh "$BRANCH"
+          CLOUDFLARE_WORKER_NAME: ${{ vars.CLOUDFLARE_WORKER_NAME }}
+          DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
+        run: node deploy/cloudflare/deploy.ts "$DEPLOY_ENVIRONMENT"

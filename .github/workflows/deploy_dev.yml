@@ -1,5 +1,5 @@
-# develop -> the Cloudflare Pages preview at the develop branch alias (docs/project_plan.md
-# section 8).
+# develop -> the persistent preview Worker `${CLOUDFLARE_WORKER_NAME}-dev` on Cloudflare Workers
+# (docs/project_plan.md sections 4 and 8). The deploy runs only after CI passes.
 name: Deploy (development)
 
 on:
@@ -10,12 +10,16 @@ permissions:
   contents: read
 
 jobs:
+  checks:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
   deploy:
     name: Deploy
+    needs: checks
     uses: ./.github/workflows/_deploy.yml
     with:
       environment: development
-      branch: develop
     secrets:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

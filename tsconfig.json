@@ -18,7 +18,15 @@
     "useDefineForClassFields": true,
     "types": ["node", "vite/client"]
   },
-  "include": ["src", "scripts", "tests", ".storybook/**/*", "*.config.ts", "*.config.mjs"],
+  "include": [
+    "src",
+    "scripts",
+    "tests",
+    "deploy",
+    ".storybook/**/*",
+    "*.config.ts",
+    "*.config.mjs"
+  ],
   // The consumer fixtures are separate projects that install the packed tarball (see
   // tests/consumers/README.md); they are type-checked there, not here.
   "exclude": ["tests/consumers"]

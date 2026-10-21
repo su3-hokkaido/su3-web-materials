@@ -104,6 +104,10 @@ vrt-update: ## Rebuild every Storybook and update the changed or missing VRT bas
 	mkdir -p test-results playwright-report
 	$(COMPOSE) --profile vrt run --rm --build vrt node_modules/.bin/playwright test --update-snapshots=changed
 
+.PHONY: changeset
+changeset: ## Add a changeset for a change to the published package (interactive)
+	$(RUN) pnpm run changeset
+
 .PHONY: check-package
 check-package: ## Check the built package (exports, side effects, tokens, manifest, publint, attw)
 	$(RUN) pnpm run check:package
@@ -170,6 +174,10 @@ local-check-package: ## Check the built package on the host
 .PHONY: local-check-consumers
 local-check-consumers: ## Run the consumer fixtures on the host (network, Chromium)
 	pnpm run check:consumers
+
+.PHONY: local-changeset
+local-changeset: ## Add a changeset on the host (interactive)
+	pnpm run changeset
 
 .PHONY: local-new-product
 local-new-product: ## Scaffold src/products/PRODUCT_ID on the host (PRODUCT_ID is required)
