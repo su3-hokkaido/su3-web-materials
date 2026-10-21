@@ -1,6 +1,6 @@
 {
   "name": "su3-web-materials",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Web Components built with Lit: a themable component catalog with design tokens, shown in Storybook.",
   "keywords": [
     "web-components",
