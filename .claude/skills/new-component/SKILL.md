@@ -1,13 +1,13 @@
 ---
 name: new-component
-description: Scaffold a new UI component (component, story, test, index) in src/shared or a product, and wire its export, following this project's conventions. Use when the user asks to add, create or scaffold a component, e.g. "add a Toggle to sample" or "create a shared Badge".
+description: Scaffold a new Web Component (element, styles, story, test, index) in src/shared or a product, and wire its export, following this project's conventions. Use when the user asks to add, create or scaffold a component, e.g. "add a switch to shared" or "create a shared badge".
 ---
 
 # new-component
 
-Create a component directory that satisfies the checklist in `docs/project_plan.md` §13, so that
-it builds, appears in Storybook, has a clean URL, is covered by the VRT, and is exported from the
-package.
+Create a component directory that satisfies the checklist in `CLAUDE.md` and
+`docs/project_plan.md` §13, so that it builds, appears in Storybook, has a clean URL, is covered by
+the VRT, and is exported from the package.
 
 ## Inputs
 
@@ -15,92 +15,52 @@ Determine these from the request; ask only if one cannot be inferred:
 
 - **scope**: `shared` or a productId (must exist under `src/products/`; otherwise suggest
   `make new-product PRODUCT_ID=...` first).
-- **category**: lower-case kebab-case directory, e.g. `buttons`, `forms`, `feedback`.
-- **Component**: PascalCase name, e.g. `Toggle`.
+- **category**: lower-case kebab-case directory, e.g. `buttons`, `selection`, `inputs`.
+- **name**: lower-case kebab-case, e.g. `icon-button`.
 
 Derived values:
 
 - Base directory: `src/shared` or `src/products/{productId}`.
-- Directory: `{base}/components/{category}/{Component}/`.
+- Directory: `{base}/components/{category}/{name}/`.
+- Tag `su3-{name}`, class `Su3{PascalName}`, tokens `--su3-comp-{name}-*`.
 - Story title: `{Category}/{Component}` where `{Category}` is the category in title case
-  (`buttons` -> `Buttons`, `date-pickers` -> `Date Pickers`).
-- Clean URL: `/{productId}/c/{category-id}/{component-id}`, where the IDs are Storybook's sanitized
-  forms (lower-case, non-alphanumerics to `-`). Tell the user the resulting URL.
+  (`buttons` -> `Buttons`) and `{Component}` the name in title case (`icon-button` -> `Icon Button`).
+- Clean URL: `/{productId}/c/{category-id}/{component-id}` with Storybook's sanitized IDs
+  (lower-case, non-alphanumerics to `-`). Tell the user the resulting URL.
 
 ## Steps
 
-1. Check that the title is unused: grep for `title: '{Category}/{Component}'` in `src/shared` and in
-   the target product. Stop and ask if it exists.
-2. Check the tokens available in `src/styles/theme.css` (`@theme`). If the component needs a value
-   that has no token, add the token there first.
-3. Create the four files, following the existing sample components (`src/shared/components/actions/Button`
-   and `src/products/sample/components/buttons/Toggle`) when they exist; otherwise use these
-   shapes:
-
-   `{Component}.tsx`
-   ```tsx
-   import { cva, type VariantProps } from 'class-variance-authority';
-   import type { ComponentPropsWithoutRef } from 'react';
-   import { cn } from '<relative path>/lib/cn';
-
-   const toggleVariants = cva('uic:inline-flex uic:items-center uic:rounded-md', {
-     variants: {
-       size: {
-         sm: 'uic:h-8 uic:px-3 uic:text-sm',
-         md: 'uic:h-10 uic:px-4 uic:text-base',
-       },
-     },
-     defaultVariants: { size: 'md' },
-   });
-
-   /** Props for {@link Toggle}. */
-   export interface ToggleProps
-     extends ComponentPropsWithoutRef<'button'>,
-       VariantProps<typeof toggleVariants> {}
-
-   /** A two-state button. */
-   export function Toggle({ className, size, ...props }: ToggleProps) {
-     return <button className={cn(toggleVariants({ size }), className)} {...props} />;
-   }
-   ```
-
-   `{Component}.stories.tsx`
-   ```tsx
-   import type { Meta, StoryObj } from '@storybook/react-vite';
-   import { Toggle } from './Toggle';
-
-   const meta = {
-     title: 'Buttons/Toggle',
-     component: Toggle,
-   } satisfies Meta<typeof Toggle>;
-
-   export default meta;
-   type Story = StoryObj<typeof meta>;
-
-   /** Required: clean URLs point at the Default story. */
-   export const Default: Story = { args: { children: 'Toggle' } };
-   ```
-
-   `{Component}.test.tsx`: Vitest + React Testing Library. Query by role or label, and cover the
-   behavior of each variant and state that matters.
-
-   `index.ts`
-   ```ts
-   export { Toggle, type ToggleProps } from './Toggle';
-   ```
-
-   Use the Storybook framework package and type imports that the repository already uses
-   (check `.storybook/main.ts`); confirm current APIs with Context7 if unsure.
-4. Re-export from the scope's `index.ts` (`src/shared/index.ts` or
-   `src/products/{productId}/index.ts`).
-5. Run `make lint typecheck test` and fix failures. Then run `make vrt-update` to create the
-   baseline images for the new stories, and tell the user which baseline files were added.
-6. Mention to the user that a changeset is needed if this is a user-visible addition
-   (`make changeset`, minor).
+1. Check that the title and the tag are unused: grep `title: '{Category}/{Component}'` in
+   `src/shared` and the target product, and `su3-{name}` across `src`. Stop and ask if either
+   exists.
+2. Check `src/shared/tokens/` for the system tokens the component needs. If a value has no token,
+   add it there first (never hardcode it in the component).
+3. Create the five files, following an existing component in the same scope as the model when one
+   exists (the first one built in Phase 1 is the reference). Responsibilities:
+   - `{name}.ts`: the `Su3{PascalName}` class extending `LitElement` (or a shared behavior mixin),
+     JSDoc (description as the body, then `@tagname su3-{name}`, `@summary`, `@slot`, `@csspart`,
+     `@cssprop`, `@fires`; an `@description` tag is ignored by the analyzer) and the `HTMLElementTagNameMap`
+     declaration. No side effects: it must not call `customElements.define`. Follow the decorator decision recorded in
+     `docs/project_plan.md` §17; confirm Lit APIs with Context7.
+   - `{name}.styles.ts`: `css` template using `--su3-comp-{name}-*` with a `var()` fallback chain
+     to `--su3-sys-*` and a built-in default; handle `prefers-reduced-motion` and `forced-colors`.
+   - `{name}.stories.ts`: `title: '{Category}/{Component}'`, `component`/`argTypes` for the
+     manifest, and an exported `Default` story (clean URLs point at `--default`).
+   - `{name}.test.ts`: Vitest Browser Mode; role/label queries; cover each variant, keyboard and
+     pointer behavior, disabled states, form participation (if any) and events.
+   - `index.ts`: the component entry. Registers the element with `defineElement` from
+     `src/shared/define-element.ts` and re-exports the class and its types.
+4. Re-export the class and types from the scope's `index.ts`. For a shared component also add
+   `import './components/{category}/{name}/index.ts';` to `src/shared/all.ts`, then run
+   `make sync-exports` to add the `./{name}.js` entry to `package.json` `exports` (the derived map is
+   checked by `src/conventions.test.ts`).
+5. Run `make lint typecheck test build check-package` and fix failures. Then run `make vrt-update` to create the
+   baselines for the new stories and tell the user which baseline files were added.
+6. Mention that a changeset is needed for a user-visible addition (`make changeset`, minor).
 
 ## Rules
 
-- All Tailwind utilities use the `uic:` prefix; no arbitrary values, inline styles or CSS files.
-- Do not rely on preflight (e.g. pair `uic:border` with `uic:border-solid`).
+- Styles only through tokens and Shadow DOM; no Tailwind, Sass, hardcoded values, global CSS.
+- Never copy code, tokens or text from material-web or any other project; write from scratch.
 - Do not import from another product; `shared` never imports from products.
 - English for all code and comments; no emojis. Respond to the user in Japanese.

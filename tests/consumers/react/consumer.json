@@ -1,0 +1,4 @@
+{
+  "root": "dist",
+  "pages": [{ "path": "/index.html", "expect": "acme", "clickExpectsText": "Clicked 1" }]
+}

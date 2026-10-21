@@ -1,0 +1,9 @@
+---
+'su3-web-materials': minor
+---
+
+Initial public release: the `<su3-button>`, `<su3-icon-button>`, `<su3-checkbox>`, `<su3-switch>`,
+`<su3-text-field>` and `<su3-divider>` Web Components (form-associated controls with validation, reset
+and restore), the design tokens with light and dark themes
+(`tokens.css`), the `sample` and `acme` product themes (`themes/*.css`) and the custom elements
+manifest.

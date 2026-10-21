@@ -1,0 +1,31 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Foundation/Browser support" />
+
+# Browser support
+
+The components target current versions of evergreen browsers (Chromium-based browsers, Firefox and
+Safari). The published JavaScript is standard ES2022.
+
+## Platform features in use
+
+| Feature                                                                                       | Used for                              |
+| --------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Custom elements and Shadow DOM                                                                | Every component                       |
+| `ElementInternals` (form association, validity)                                               | Buttons, checkbox, switch, text field |
+| Constructable stylesheets                                                                     | Lit styles                            |
+| `color-mix()`                                                                                 | Disabled and state-layer colors       |
+| `@media (pointer: coarse)`, `forced-colors`, `prefers-reduced-motion`, `prefers-color-scheme` | Adaptive behavior                     |
+| `:focus-visible`                                                                              | Keyboard focus ring                   |
+
+## How it is tested
+
+Component tests run in real Chromium (Vitest Browser Mode), and the visual regression tests run in
+Chromium inside a pinned Docker image. The package is also installed from its packed tarball into
+plain HTML, Vite, React 19 and Vue fixtures and checked in Chromium. Firefox and Safari are not part
+of the automated checks; report problems with a browser and version.
+
+## Server rendering
+
+Importing a module never touches `document` or `customElements`, so it is safe on the server;
+elements are registered only by a component's entry (`button.js`, `all.js`).

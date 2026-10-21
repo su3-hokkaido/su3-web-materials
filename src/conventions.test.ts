@@ -1,0 +1,687 @@
+/**
+ * Mechanical checks for the conventions in docs/project_plan.md sections 1, 3, 4, 10 and 13. They
+ * run with the other tests so that a convention violation fails `pnpm run ci`. This file reads the
+ * repository, so it runs in Node (the `conventions` Vitest project), not in the browser.
+ */
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { PUBLISH_FIELDS, expectedExports, listComponents } from '../scripts/lib/package-exports.ts';
+import { PORTAL_PLACEHOLDER } from '../scripts/lib/storybook-site.ts';
+import { THEMES, VIEWPORTS, parseVrtParameters } from '../tests/vrt/stories.ts';
+import { declaredProperties, themeColorOverrides } from '../scripts/lib/theme-css.ts';
+import { findContrastFailures, resolveColorRoles } from './shared/tokens/contrast.ts';
+import { sysTokenEntries } from './shared/tokens/css.ts';
+
+const root = process.cwd();
+const srcDir = resolve(root, 'src');
+const sharedDir = resolve(srcDir, 'shared');
+const productsDir = resolve(srcDir, 'products');
+
+interface ComponentEntry {
+  /** `shared` or a productId. */
+  scope: string;
+  scopeDir: string;
+  category: string;
+  /** Kebab-case component name, e.g. `icon-button`. */
+  name: string;
+  dir: string;
+}
+
+const kebab = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+
+function subdirectories(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+}
+
+function collectComponents(scope: string, scopeDir: string): ComponentEntry[] {
+  const componentsDir = join(scopeDir, 'components');
+  return subdirectories(componentsDir).flatMap((category) =>
+    subdirectories(join(componentsDir, category)).map((name) => ({
+      scope,
+      scopeDir,
+      category,
+      name,
+      dir: join(componentsDir, category, name),
+    })),
+  );
+}
+
+/** `date-pickers` -> `Date Pickers`; used for story titles. */
+const toWords = (kebabCase: string): string =>
+  kebabCase
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+/** `icon-button` -> `IconButton`; used for class names. */
+const toPascal = (kebabCase: string): string => toWords(kebabCase).replaceAll(' ', '');
+
+const read = (...segments: string[]): string => readFileSync(join(...segments), 'utf8');
+
+function readStoryTitle(storyFile: string): string | undefined {
+  return /\btitle:\s*['"]([^'"]+)['"]/.exec(readFileSync(storyFile, 'utf8'))?.[1];
+}
+
+/** The JSDoc block directly above `export class {className}`, split into body and tag lines. */
+function classDoc(source: string, className: string): { body: string; tags: string } | undefined {
+  const pattern = new RegExp(`/\\*\\*((?:(?!\\*/)[\\s\\S])*)\\*/\\s*export class ${className}\\b`);
+  const block = pattern.exec(source)?.[1];
+  if (block === undefined) return undefined;
+  const lines = block.split('\n').map((line) => line.replace(/^\s*\* ?/, ''));
+  const firstTag = lines.findIndex((line) => line.startsWith('@'));
+  const split = firstTag === -1 ? lines.length : firstTag;
+  return {
+    body: lines.slice(0, split).join('\n').trim(),
+    tags: lines.slice(split).join('\n'),
+  };
+}
+
+function sourceFiles(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) return sourceFiles(path);
+    return entry.name.endsWith('.ts') ? [path] : [];
+  });
+}
+
+const products = subdirectories(productsDir);
+const sharedComponents = collectComponents('shared', sharedDir);
+const productComponents = products.flatMap((product) =>
+  collectComponents(product, join(productsDir, product)),
+);
+const allComponents = [...sharedComponents, ...productComponents];
+
+describe('component conventions', () => {
+  it('finds the reference component', () => {
+    expect(sharedComponents.length).toBeGreaterThan(0);
+  });
+
+  describe.each(allComponents.map((entry) => [relative(root, entry.dir), entry] as const))(
+    '%s',
+    (_label, entry) => {
+      const { name } = entry;
+      const tag = `su3-${name}`;
+      const className = `Su3${toPascal(name)}`;
+      const classFile = join(entry.dir, `${name}.ts`);
+      const stylesFile = join(entry.dir, `${name}.styles.ts`);
+      const storyFile = join(entry.dir, `${name}.stories.ts`);
+
+      it('uses kebab-case for the category and the component name', () => {
+        expect(entry.category).toMatch(kebab);
+        expect(name).toMatch(kebab);
+      });
+
+      it('contains exactly the element, styles, story, test and index files', () => {
+        expect(readdirSync(entry.dir).sort()).toEqual(
+          [
+            `${name}.ts`,
+            `${name}.styles.ts`,
+            `${name}.stories.ts`,
+            `${name}.test.ts`,
+            'index.ts',
+          ].sort(),
+        );
+      });
+
+      it(`declares ${className} for <${tag}> without registering it`, () => {
+        const source = read(classFile);
+        expect(source).toMatch(new RegExp(`export class ${className} extends `));
+        expect(source).toContain(`'${tag}': ${className}`);
+        expect(source).not.toMatch(/customElements\.define|defineElement\(/);
+      });
+
+      it('registers the element in the component entry and re-exports the class', () => {
+        const index = read(entry.dir, 'index.ts');
+        expect(index).toContain(`defineElement('${tag}', ${className})`);
+        expect(index).toContain(`export { ${className}`);
+      });
+
+      it('documents the element for the manifest: body, @tagname, @summary', () => {
+        const doc = classDoc(read(classFile), className);
+        expect(doc, `${className} needs a JSDoc block`).toBeDefined();
+        // The analyzer ignores an @description tag, so the description is the block body.
+        expect(doc?.body.length ?? 0).toBeGreaterThan(40);
+        expect(doc?.tags).toContain(`@tagname ${tag}`);
+        expect(doc?.tags).toMatch(/@summary \S/);
+      });
+
+      it('styles with tokens only', () => {
+        const css = readFileSync(stylesFile, 'utf8');
+        expect(css, 'color literals belong in src/shared/tokens').not.toMatch(
+          /#[0-9a-fA-F]{3,8}\b|\b(?:rgb|rgba|hsl|hsla|oklch|oklab|lab|lch)\(/,
+        );
+        expect(css).not.toContain('!important');
+        // Only su3 tokens and private (--_) properties may be read, and never the reference layer.
+        expect(css).not.toMatch(/var\(--(?!su3-|_)/);
+        expect(css, 'components read --su3-sys-* and --su3-comp-*').not.toContain('--su3-ref-');
+        // Sizes and durations come from tokens; zero is the only literal allowed.
+        expect(css).not.toMatch(/(?<![\w.-])[1-9]\d*(?:\.\d+)?(?:px|rem|em|ms|s)\b/);
+      });
+
+      it('has a {Category}/{Component} story title, a Default story and the manifest tag', () => {
+        const source = readFileSync(storyFile, 'utf8');
+        expect(readStoryTitle(storyFile)).toBe(`${toWords(entry.category)}/${toWords(name)}`);
+        expect(source).toMatch(/export const Default\b/);
+        expect(source).toContain(`component: '${tag}'`);
+      });
+
+      it("is re-exported from its scope's index.ts", () => {
+        const scopeIndex = read(entry.scopeDir, 'index.ts');
+        expect(scopeIndex).toContain(`'./components/${entry.category}/${name}/${name}.ts'`);
+      });
+    },
+  );
+
+  it('keeps story titles unique across src/shared and every product build', () => {
+    const titlesOf = (entries: ComponentEntry[]): (string | undefined)[] =>
+      entries.map((entry) => readStoryTitle(join(entry.dir, `${entry.name}.stories.ts`)));
+
+    expect(new Set(titlesOf(sharedComponents)).size).toBe(sharedComponents.length);
+    for (const product of products) {
+      const build = [...sharedComponents, ...productComponents.filter((c) => c.scope === product)];
+      expect(new Set(titlesOf(build)).size, `build for "${product}"`).toBe(build.length);
+    }
+  });
+
+  it.each(products)(
+    'uses a kebab-case productId, because "%s" is a URL path segment',
+    (product) => {
+      expect(product).toMatch(kebab);
+    },
+  );
+});
+
+describe('products', () => {
+  it('has the sample product and a contrasting one', () => {
+    expect(products).toContain('sample');
+    expect(products.length).toBeGreaterThanOrEqual(2);
+  });
+
+  describe.each(products)('product "%s"', (product) => {
+    const dir = join(productsDir, product);
+    const themeFile = join(dir, 'theme.css');
+
+    it('has an index.ts and a theme.css, so every product has the same layout', () => {
+      expect(existsSync(join(dir, 'index.ts'))).toBe(true);
+      expect(existsSync(themeFile)).toBe(true);
+    });
+
+    it('declares only known --su3-sys-* tokens and --su3-comp-* hooks', () => {
+      const knownSys = new Set(sysTokenEntries.map((entry) => `--su3-sys-${entry.name}`));
+      for (const property of declaredProperties(read(themeFile))) {
+        expect(property.startsWith('--su3-comp-') || knownSys.has(property), property).toBe(true);
+      }
+    });
+
+    describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
+      const overrides = themeColorOverrides(read(themeFile))[mode];
+
+      it('uses plain #rrggbb for color roles, so the contrast test can read them', () => {
+        for (const [role, value] of Object.entries(overrides)) {
+          expect(value, role).toMatch(/^#[0-9a-f]{6}$/);
+        }
+      });
+
+      it('keeps every contrast pair above its minimum (4.5:1 text, 3:1 non-text)', () => {
+        expect(findContrastFailures(resolveColorRoles(mode, overrides))).toEqual([]);
+      });
+    });
+
+    it('declares the same dark colors for the attribute and for the OS preference', () => {
+      const { dark, darkPreference } = themeColorOverrides(read(themeFile));
+      expect(darkPreference).toEqual(dark);
+    });
+  });
+});
+
+/** Parses a `_redirects` file into [from, to, status] rules, ignoring comments and blank lines. */
+function readRedirectRules(content: string): [string, string, string][] {
+  return content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '' && !line.startsWith('#'))
+    .map((line) => {
+      const [from = '', to = '', status = ''] = line.split(/\s+/);
+      return [from, to, status];
+    });
+}
+
+describe('site delivery (docs/project_plan.md section 4)', () => {
+  const redirects = readRedirectRules(read(root, 'deploy/cloudflare/_redirects'));
+  const nginx = read(root, 'deploy/local/nginx.conf');
+
+  it('redirects /{productId}/c/{category}/{component} to the Default story, with or without a slash', () => {
+    const target = '/:productId/?path=/story/:category-:component--default';
+    expect(redirects).toEqual([
+      ['/:productId/c/:category/:component', target, '302'],
+      ['/:productId/c/:category/:component/', target, '302'],
+    ]);
+  });
+
+  it('keeps the nginx rule equivalent to the Cloudflare rule', () => {
+    const location =
+      /location ~ \^\/\(([^)]+)\)\/c\/\(([^)]+)\)\/\(([^)]+)\)\/\?\$ \{\s*return (\d+) (\S+);/.exec(
+        nginx,
+      );
+    expect(location, 'nginx.conf needs the clean-URL location').not.toBeNull();
+    const [, product, category, component, status, target] = location ?? [];
+    // The three captures only accept the characters of sanitized ids (see the file's comment).
+    for (const capture of [product, category, component]) expect(capture).toBe('[a-z0-9-]+');
+
+    const [first] = redirects;
+    const translated = (first?.[1] ?? '')
+      .replace(':productId', '$1')
+      .replace(':category', '$2')
+      .replace(':component', '$3');
+    expect(target).toBe(translated);
+    expect(status).toBe(first?.[2]);
+  });
+
+  it('does not serve the _redirects file from nginx, like Cloudflare', () => {
+    expect(nginx).toMatch(/location = \/_redirects \{\s*return 404;/);
+  });
+
+  it('serves the built site as static assets from dist/storybook, without a Worker script', () => {
+    // JSONC as Prettier writes it: full-line comments and trailing commas.
+    const config = JSON.parse(
+      read(root, 'deploy/cloudflare/wrangler.jsonc')
+        .replace(/^\s*\/\/.*$/gm, '')
+        .replace(/,(\s*[}\]])/g, '$1'),
+    ) as {
+      name?: string;
+      main?: string;
+      compatibility_date?: string;
+      assets?: { directory?: string; binding?: string };
+    };
+    expect(config.name).toBeTruthy();
+    expect(config.compatibility_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(config.main).toBeUndefined();
+    expect(config.assets?.binding).toBeUndefined();
+    expect(resolve(root, 'deploy/cloudflare', config.assets?.directory ?? '')).toBe(
+      resolve(root, 'dist/storybook'),
+    );
+  });
+
+  it('has a portal template with the marker the build script fills in', () => {
+    const portal = read(root, 'portal/index.html');
+    expect(portal).toContain(PORTAL_PLACEHOLDER);
+    expect(portal).toMatch(/<html lang="en">/);
+    expect(portal).toMatch(/<title>[^<]+<\/title>/);
+  });
+
+  it('builds every product through build-storybook:all, after generating the manifest, in ci', () => {
+    const { scripts } = JSON.parse(read(root, 'package.json')) as {
+      scripts: Record<string, string>;
+    };
+    expect(scripts['build-storybook:all']).toMatch(
+      /^pnpm run analyze && node scripts\/build-storybook-all\.ts$/,
+    );
+    expect(scripts['ci']).toMatch(/^pnpm run analyze && /);
+    expect(scripts['ci']).toContain('pnpm run build-storybook:all');
+  });
+
+  it('ends the Dockerfile with the nginx preview stage, so an untargeted build produces it', () => {
+    const dockerfile = read(root, 'Dockerfile');
+    const stages = [...dockerfile.matchAll(/^FROM \S+ AS (\S+)$/gm)].map((match) => match[1]);
+    expect(stages).toEqual(['base', 'dev', 'build', 'vrt', 'preview']);
+    expect(dockerfile).toContain('COPY deploy/local/nginx.conf /etc/nginx/conf.d/default.conf');
+    expect(read(root, 'compose.yaml')).toMatch(/preview:[\s\S]*profiles: \[preview\]/);
+  });
+});
+
+describe('package (docs/project_plan.md section 9)', () => {
+  const packageJson = JSON.parse(read(root, 'package.json')) as Record<string, unknown>;
+
+  it('derives exports from the components and products (run `pnpm run sync:exports` after adding one)', () => {
+    expect(packageJson['exports']).toEqual(expectedExports(listComponents(root), products));
+  });
+
+  it('sets the publishing fields and is not private', () => {
+    expect(packageJson['private']).toBeUndefined();
+    expect(packageJson['type']).toBe('module');
+    for (const [field, value] of Object.entries(PUBLISH_FIELDS)) {
+      expect(packageJson[field], field).toEqual(value);
+    }
+    // engines would be published and constrain consumers; the Node.js pin is devEngines only.
+    expect(packageJson['engines']).toBeUndefined();
+  });
+
+  it('has lit as its only runtime dependency, so no framework is required of consumers', () => {
+    const dependencies = packageJson['dependencies'] as Record<string, string>;
+    expect(Object.keys(dependencies)).toEqual(['lit']);
+  });
+
+  it('registers every component in all.ts', () => {
+    const all = read(srcDir, 'shared/all.ts');
+    for (const { category, name } of listComponents(root)) {
+      expect(all, name).toContain(`'./components/${category}/${name}/index.ts'`);
+    }
+  });
+});
+
+/** Reads the `vrt: { ... }` object literal of a story file, which only holds booleans and strings. */
+function readVrtParameters(source: string): unknown {
+  const literal = /\bvrt:\s*(\{[^}]*\})/.exec(source)?.[1];
+  if (literal === undefined) return undefined;
+  return JSON.parse(
+    literal
+      .replace(/'/g, '"')
+      .replace(/([A-Za-z]+)\s*:/g, '"$1":')
+      .replace(/,(\s*[}\]])/g, '$1'),
+  ) as unknown;
+}
+
+describe('visual regression test (docs/project_plan.md section 11)', () => {
+  const config = read(root, 'playwright.config.ts');
+  const compose = read(root, 'compose.yaml');
+  const makefile = read(root, 'Makefile');
+
+  it('has one Playwright project per viewport, named like parameters.vrt.viewports', () => {
+    const names = [...config.matchAll(/\{ name: '([^']+)'/g)].map((match) => match[1]);
+    expect(names).toEqual([...VIEWPORTS]);
+  });
+
+  it('keeps baselines per viewport project, on Linux only (no platform suffix)', () => {
+    expect(config).toContain(
+      "snapshotPathTemplate: '{testDir}/__screenshots__/{projectName}/{arg}{ext}'",
+    );
+    expect(config).toContain("animations: 'disabled'");
+  });
+
+  it('runs the suite from the vrt compose service pinned to amd64, behind its profile', () => {
+    const service = /\n {2}vrt:\n([\s\S]*?)\n\S/.exec(compose)?.[1] ?? '';
+    expect(service).toContain('platform: linux/amd64');
+    expect(service).toContain('profiles: [vrt]');
+    expect(service).toContain('target: vrt');
+    expect(service).toContain('./dist/storybook:/app/dist/storybook:ro');
+    expect(service).toContain('./tests/vrt:/app/tests/vrt');
+  });
+
+  it('offers make vrt and make vrt-update, both after building every Storybook', () => {
+    for (const target of ['vrt', 'vrt-update']) {
+      const recipe =
+        new RegExp(`^${target}:.*\\n((?:\\t.*\\n|@.*\\n)+)`, 'm').exec(makefile)?.[1] ?? '';
+      expect(recipe, target).toContain('pnpm run build-storybook:all');
+      expect(recipe, target).toContain('--profile vrt run --rm --build vrt');
+    }
+    expect(makefile).toContain('--update-snapshots=changed');
+  });
+
+  it('uses only valid parameters.vrt in the stories', () => {
+    const storyFiles = sourceFiles(srcDir).filter((file) => file.endsWith('.stories.ts'));
+    expect(storyFiles.length).toBeGreaterThan(0);
+    for (const file of storyFiles) {
+      const parameters = readVrtParameters(readFileSync(file, 'utf8'));
+      expect(() => parseVrtParameters(parameters), relative(root, file)).not.toThrow();
+    }
+  });
+
+  it('keeps baselines as {viewport}/{scope}/{storyId}-{theme}.png with a known viewport and scope', () => {
+    const base = join(root, 'tests/vrt/__screenshots__');
+    if (!existsSync(base)) return;
+    const scopes = new Set(['shared', ...products]);
+    const files = readdirSync(base, { recursive: true, encoding: 'utf8' }).filter((file) =>
+      file.endsWith('.png'),
+    );
+    expect(files.length).toBeGreaterThan(0);
+    for (const file of files) {
+      const [viewport, scope, name, ...rest] = file.split('/');
+      expect(VIEWPORTS as readonly string[], file).toContain(viewport);
+      expect(scopes, file).toContain(scope);
+      expect(rest, file).toEqual([]);
+      expect(name, file).toMatch(
+        new RegExp(`^[a-z0-9-]+(--[a-z0-9-]+)?-(${THEMES.join('|')})\\.png$`),
+      );
+    }
+  });
+});
+
+describe('GitHub Actions (docs/project_plan.md section 8)', () => {
+  const workflowsDir = join(root, '.github/workflows');
+  const workflowFiles = readdirSync(workflowsDir).filter((file) => file.endsWith('.yml'));
+  const workflow = (name: string): string => read(workflowsDir, name);
+  const actionFiles = [
+    ...workflowFiles.map((file) => join(workflowsDir, file)),
+    join(root, '.github/actions/setup/action.yml'),
+  ];
+
+  it('finds the workflows', () => {
+    expect(workflowFiles).toEqual(
+      expect.arrayContaining([
+        '_deploy.yml',
+        'ci.yml',
+        'consumers.yml',
+        'create-d2m-pr.yml',
+        'deploy_dev.yml',
+        'deploy_prod.yml',
+        'release.yml',
+        'vrt.yml',
+      ]),
+    );
+  });
+
+  it('pins every external action to a full commit SHA with a version comment', () => {
+    const uses = actionFiles.flatMap((file) =>
+      [...readFileSync(file, 'utf8').matchAll(/^\s*-?\s*uses:\s*(\S+)(?:\s+(#.*))?$/gm)].map(
+        (match) => ({
+          file: relative(root, file),
+          target: match[1] ?? '',
+          comment: match[2] ?? '',
+        }),
+      ),
+    );
+    const external = uses.filter(({ target }) => !target.startsWith('./'));
+    expect(external.length).toBeGreaterThan(0);
+    for (const { file, target, comment } of external) {
+      expect(target, `${file}: ${target}`).toMatch(/^[\w.-]+\/[\w./-]+@[0-9a-f]{40}$/);
+      expect(comment, `${file}: ${target} needs a version comment`).toMatch(/^# v\d+(\.\d+)*/);
+    }
+  });
+
+  it('declares minimal top-level permissions and avoids pull_request_target', () => {
+    for (const file of workflowFiles) {
+      const source = workflow(file);
+      expect(source, file).toMatch(/^permissions:\n {2}contents: read$/m);
+      expect(source, file).not.toMatch(/pull_request_target|write-all/);
+    }
+  });
+
+  it('gives every job on a runner a timeout', () => {
+    for (const file of workflowFiles) {
+      const source = workflow(file);
+      const jobs = source.match(/^ {4}runs-on:/gm)?.length ?? 0;
+      const timeouts = source.match(/^ {4}timeout-minutes:/gm)?.length ?? 0;
+      expect(timeouts, file).toBeGreaterThanOrEqual(jobs);
+    }
+  });
+
+  it('runs CI on pull requests and as a reusable workflow, installing Chromium first', () => {
+    const ci = workflow('ci.yml');
+    expect(ci).toMatch(/^on:\n {2}pull_request:\n {2}workflow_call:/m);
+    expect(ci).not.toMatch(/^ {2}push:/m);
+    expect(ci.indexOf('playwright install --with-deps chromium')).toBeGreaterThan(-1);
+    expect(ci.indexOf('playwright install --with-deps chromium')).toBeLessThan(
+      ci.indexOf('pnpm run ci'),
+    );
+  });
+
+  it.each([
+    ['deploy_dev.yml', 'develop', 'development'],
+    ['deploy_prod.yml', 'main', 'production'],
+  ])(
+    'deploys %s only after CI passes, to the %s branch environment',
+    (file, branch, environment) => {
+      const source = workflow(file);
+      expect(source).toContain(`branches: [${branch}]`);
+      expect(source).toContain('uses: ./.github/workflows/ci.yml');
+      expect(source).toMatch(/deploy:\n(?:.*\n)*? {4}needs: checks/);
+      expect(source).toContain('uses: ./.github/workflows/_deploy.yml');
+      expect(source).toContain(`environment: ${environment}`);
+    },
+  );
+
+  it('skips the deploy unless CLOUDFLARE_WORKER_NAME is set, and deploys through the script', () => {
+    const deploy = workflow('_deploy.yml');
+    expect(deploy).toContain("if: vars.CLOUDFLARE_WORKER_NAME == ''");
+    expect(deploy).toContain("if: vars.CLOUDFLARE_WORKER_NAME != ''");
+    expect(deploy).toContain('node deploy/cloudflare/deploy.ts "$DEPLOY_ENVIRONMENT"');
+    expect(deploy).toContain('pnpm run build-storybook:all');
+    expect(deploy).not.toMatch(/Pages|CLOUDFLARE_PROJECT_NAME|deploy\.sh/);
+    // Cloudflare credentials appear only where they are needed.
+    for (const file of workflowFiles.filter(
+      (name) => !['_deploy.yml', 'deploy_dev.yml', 'deploy_prod.yml'].includes(name),
+    )) {
+      expect(workflow(file), file).not.toContain('CLOUDFLARE_');
+    }
+  });
+
+  it('checks the consumer fixtures in their own scheduled workflow', () => {
+    const consumers = workflow('consumers.yml');
+    expect(consumers).toContain('schedule:');
+    expect(consumers).toContain('playwright install --with-deps chromium');
+    expect(consumers).toContain('pnpm run check:consumers');
+    expect(workflow('ci.yml')).not.toContain('check:consumers');
+  });
+
+  it('runs the VRT in the compose service after building every Storybook', () => {
+    const vrt = workflow('vrt.yml');
+    expect(vrt.indexOf('pnpm run build-storybook:all')).toBeGreaterThan(-1);
+    expect(vrt.indexOf('pnpm run build-storybook:all')).toBeLessThan(
+      vrt.indexOf('docker compose --profile vrt run --rm --build vrt'),
+    );
+    expect(vrt).toContain('uses: actions/upload-artifact@');
+  });
+
+  it('publishes only from the owning repository, with Trusted Publishing and no npm token', () => {
+    const release = workflow('release.yml');
+    expect(release).toContain('github.repository == vars.NPM_PUBLISH_REPOSITORY');
+    expect(release).toContain("'pnpm run release'");
+    expect(release).toMatch(/^ {6}id-token: write/m);
+    expect(release).toContain("cache: 'false'");
+    expect(release).not.toMatch(/NODE_AUTH_TOKEN|NPM_TOKEN|_authToken|registry-url/);
+    expect(release).toContain('branches: [main]');
+  });
+
+  it('has a release script that checks the package before publishing, and a changeset setup', () => {
+    const { scripts, devDependencies } = JSON.parse(read(root, 'package.json')) as {
+      scripts: Record<string, string>;
+      devDependencies: Record<string, string>;
+    };
+    expect(scripts['release']).toBe(
+      'pnpm run build && pnpm run check:package && changeset publish',
+    );
+    expect(scripts['changeset']).toBe('changeset');
+    expect(devDependencies['@changesets/cli']).toBeDefined();
+    const config = JSON.parse(read(root, '.changeset/config.json')) as Record<string, unknown>;
+    expect(config['baseBranch']).toBe('develop');
+    expect(config['access']).toBe('public');
+  });
+
+  it('keeps Dependabot on the actions, targeting develop', () => {
+    const dependabot = read(root, '.github/dependabot.yml');
+    expect(dependabot).toContain('package-ecosystem: github-actions');
+    expect(dependabot).toContain('target-branch: develop');
+  });
+});
+
+describe('provenance (docs/project_plan.md section 1)', () => {
+  const files = sourceFiles(srcDir).filter((file) => !file.endsWith('conventions.test.ts'));
+
+  it('finds source files to scan', () => {
+    expect(files.length).toBeGreaterThan(0);
+  });
+
+  it("uses none of material-web's names: no md- tags or --md- properties", () => {
+    const offenders = files.filter((file) =>
+      /--md-|(?<![\w-])md-[a-z]|material design/i.test(readFileSync(file, 'utf8')),
+    );
+    expect(offenders.map((file) => relative(root, file))).toEqual([]);
+  });
+
+  it('flags the capitalized word "Material" as well', () => {
+    const offenders = files.filter((file) => /\bMaterial\b/.test(readFileSync(file, 'utf8')));
+    expect(offenders.map((file) => relative(root, file))).toEqual([]);
+  });
+
+  it('prefixes every custom element tag with su3-', () => {
+    const tags = files.flatMap((file) =>
+      [...readFileSync(file, 'utf8').matchAll(/defineElement\('([^']+)'/g)].map(
+        (match) => match[1],
+      ),
+    );
+    expect(tags.length).toBeGreaterThan(0);
+    for (const tag of tags) expect(tag).toMatch(/^su3-/);
+  });
+});
+
+describe('toolchain pins', () => {
+  const packageJson = JSON.parse(read(root, 'package.json')) as {
+    engines?: unknown;
+    devEngines?: { runtime?: { name?: string; version?: string } };
+    devDependencies?: Record<string, string>;
+  };
+
+  it('pins one Node.js major for development without constraining consumers', () => {
+    const nvmrc = read(root, '.nvmrc').trim();
+    const runtime = packageJson.devEngines?.runtime;
+    // engines would be published; the components do not depend on the Node.js version.
+    expect(packageJson.engines).toBeUndefined();
+    expect(runtime?.name).toBe('node');
+    expect(runtime?.version).toBe(`>=${nvmrc} <${String(Number(nvmrc) + 1)}`);
+  });
+
+  const dockerfile = read(root, 'Dockerfile');
+
+  it('uses the pinned Node.js major in the Dockerfile', () => {
+    expect(/^ARG NODE_VERSION=(\S+)$/m.exec(dockerfile)?.[1]).toBe(read(root, '.nvmrc').trim());
+  });
+
+  it('installs the Chromium for the tests at the playwright version from package.json', () => {
+    const { playwright, '@playwright/test': playwrightTest } = packageJson.devDependencies ?? {};
+    expect(playwright).toMatch(/^\d+\.\d+\.\d+$/);
+    // Vitest Browser Mode uses `playwright`, the VRT uses `@playwright/test`; they must not drift.
+    expect(playwrightTest).toBe(playwright);
+    // The Dockerfile reads the version from package.json instead of repeating it.
+    expect(dockerfile).toContain("require('/tmp/package.json').devDependencies.playwright");
+    expect(dockerfile).toContain('playwright install --with-deps chromium');
+    expect(dockerfile).toMatch(/^ENV PLAYWRIGHT_BROWSERS_PATH=\S+$/m);
+  });
+
+  // The VRT image is added in Phase 5; the check applies once a `vrt` stage exists.
+  it.runIf(/\bAS vrt$/m.test(dockerfile))(
+    'runs the VRT in the Playwright image that matches @playwright/test',
+    () => {
+      const tag = /^FROM mcr\.microsoft\.com\/playwright:v(\S+?)-\S+ AS vrt$/m.exec(
+        dockerfile,
+      )?.[1];
+      // Bump both together, or the browser build differs from the one the baselines came from.
+      expect(tag).toBe(packageJson.devDependencies?.['@playwright/test']);
+    },
+  );
+
+  it('does not leave secrets or local env files in the build context', () => {
+    const ignore = read(root, '.dockerignore');
+    expect(ignore).toMatch(/^\.env$/m);
+    expect(ignore).toMatch(/^!\.env\.\*\.sample$/m);
+    expect(ignore).toMatch(/^node_modules$/m);
+  });
+});
+
+describe('server-side import', () => {
+  // Plan section 13: importing a module must not throw without a browser.
+  it('imports the package root without touching a browser', async () => {
+    const root = await import('./shared/index.ts');
+    expect(root.Su3Button).toBeTypeOf('function');
+    expect(root.FormSubmitterElement).toBeTypeOf('function');
+  });
+
+  it('imports a component entry and the token helpers', async () => {
+    await expect(import('./shared/components/buttons/button/index.ts')).resolves.toBeDefined();
+    const tokens = await import('./shared/tokens/index.ts');
+    expect(tokens.tokensCss).toContain('--su3-sys-color-accent');
+  });
+});

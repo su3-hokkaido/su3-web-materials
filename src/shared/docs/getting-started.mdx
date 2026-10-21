@@ -1,0 +1,48 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Foundation/Getting started" />
+
+# Getting started
+
+su3-web-materials is a set of Web Components built with Lit. Each component is a custom element
+with a Shadow DOM, styled only through design tokens, so it works in plain HTML and in any
+framework.
+
+## Install
+
+```sh
+npm install su3-web-materials
+```
+
+## Register a component
+
+Import the component's entry to register its element. `all.js` registers every component.
+
+```ts
+import 'su3-web-materials/tokens.css';
+import 'su3-web-materials/button.js';
+```
+
+```html
+<su3-button variant="filled">Save</su3-button>
+```
+
+The package root (`su3-web-materials`) exports classes and types and registers nothing, so importing
+a type never defines an element.
+
+## Tokens are optional
+
+Components carry built-in defaults, so the unthemed look works without `tokens.css`. Load
+`tokens.css` first and a theme after it to change the look. See **Theming**.
+
+## Forms
+
+`su3-checkbox`, `su3-switch`, `su3-text-field` and the buttons are form-associated. Put them in a
+`<form>` and they submit with `name` and `value`, take part in validation (`required`, `pattern`,
+`setCustomValidity`), and reset and restore like native controls.
+
+## Where to look next
+
+Each component page lists its attributes, slots, parts, events and CSS custom properties, generated
+from the source. The **Accessibility**, **Browser support** and **Design language** pages explain
+the rules every component follows.

@@ -4,9 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A Storybook-based UI component catalog template (React + TypeScript + Tailwind CSS v4), deployed
-per productId to Cloudflare Pages and published to npm. The full specification is
-`docs/project_plan.md`; read the relevant section before starting any task.
+A catalog of real Web Components (Lit 3 + TypeScript, Shadow DOM, CSS custom property tokens)
+inspired by the structure of material-web, shown in Storybook (`@storybook/web-components-vite`),
+deployed per productId to Cloudflare Workers Static Assets and published to npm. The full
+specification is `docs/project_plan.md`; read the relevant section before starting any task.
+
+**material-web is a reference for structure and ideas only. Never copy its source, Sass, tokens,
+docs text or assets, and never use the names "Material", `md-` or Google branding.** If copying
+code from any other project seems necessary, stop and ask the user first.
 
 ## Top-level rules
 
@@ -27,44 +32,82 @@ per productId to Cloudflare Pages and published to npm. The full specification i
 
 Summary of `docs/project_plan.md` §3, §4, §10 and §13:
 
-- Layout: `src/shared/components/{category}/{Component}/` and
-  `src/products/{productId}/components/{category}/{Component}/`. `{category}` is lower-case
-  kebab-case.
-- Each component directory contains exactly `Component.tsx`, `Component.stories.tsx`,
-  `Component.test.tsx` and `index.ts`, and the component is re-exported from the scope's
-  `index.ts` (`src/shared/index.ts` or `src/products/{productId}/index.ts`).
+- Layout: `src/shared/components/{category}/{name}/` and
+  `src/products/{productId}/components/{category}/{name}/`. `{category}` is lower-case kebab-case,
+  `{name}` is the lower-case kebab-case component name (`button`, `icon-button`).
+- Each component directory contains exactly `{name}.ts`, `{name}.styles.ts`, `{name}.stories.ts`,
+  `{name}.test.ts` and `index.ts`. Shared behavior goes in `src/shared/behaviors/` as base classes
+  (`FormAssociatedElement`, `FormSubmitterElement`, `FormCheckableElement`), shared CSS (state layer,
+  focus ring, touch target) in `src/shared/styles/` as token-only `css` fragments (there is no ripple
+  and no `foundation` category), and tokens in `src/shared/tokens/`.
+- Element tag `su3-{name}`, class `Su3{Name}`, `HTMLElementTagNameMap` declared. Each component
+  class module `{name}.ts` has no side effects; the component's `index.ts` registers the element with
+  `defineElement` and re-exports it; the package root `src/shared/index.ts` re-exports classes and
+  types straight from `{name}.ts` (it registers nothing).
 - Story `title` is `{Category}/{Component}` (no productId), and every story file exports a
   `Default` story, because clean URLs (`/{productId}/c/{category}/{component}`) point at
   `--default`. Titles must be unique across `shared` and each product.
-- Styling: Tailwind utilities only, always with the `uic:` prefix; no per-component CSS files; no
-  arbitrary values (`bg-[#123456]`); colors, spacing, radius and fonts come from the `@theme`
-  tokens in `src/styles/theme.css`.
-- Components must not rely on preflight (it is not shipped); set what you need explicitly, e.g.
-  `uic:border uic:border-solid`.
-- Merge classes with `cn()` (`src/lib/cn.ts`) and accept a `className` prop; define variants with
-  cva.
+- Styling: `css` tagged templates in `{name}.styles.ts`, scoped by Shadow DOM. No Tailwind, Sass,
+  global selectors or `!important`. Never hardcode colors, sizes, radii, durations or fonts: use
+  tokens. Tokens have three layers: `--su3-ref-*`, `--su3-sys-*`, `--su3-comp-{name}-*`; a
+  component reads `--su3-comp-*` with a `var()` fallback chain to `--su3-sys-*` and a built-in
+  default. Support `prefers-reduced-motion` and `forced-colors`.
+- Document the public API with JSDoc so it reaches `custom-elements.json` and the Storybook docs:
+  the description is the JSDoc body (not an `@description` tag, which the analyzer ignores), plus
+  `@tagname su3-{name}` (required, because registration lives in `index.ts`), `@summary`, `@slot`,
+  `@csspart`, `@cssprop` and `@fires`. Private and protected members are filtered out of the
+  manifest by `custom-elements-manifest.config.mjs`.
+- Prefer native semantics (`ElementInternals`, `delegatesFocus`, real `<button>`/`<input>` in the
+  shadow root); form controls are form-associated. No a11y addon violations.
+- Importing a module must not throw on the server and must not touch `document` or `customElements`
+  (registration lives in the component's `index.ts`, through the guarded `defineElement`).
 - Dependency direction: products may import `shared`; `shared` never imports products; products
   never import each other.
-- No a11y addon violations. Optional per-story VRT settings go in `parameters.vrt`:
-  `{ disable?: boolean; viewports?: ('desktop' | 'mobile')[] }` (validated by `tests/vrt/stories.ts`).
+- The npm package is built unbundled into `dist` (`make build`, `make check-package`). `package.json`
+  `exports` is derived from the directory layout: after adding a shared component (also import it in
+  `src/shared/all.ts`) or a product, run `make sync-exports` (`make new-product` does it for
+  products). Class modules stay side-effect free and only the component's `index.ts` registers the
+  element, because `sideEffects` lists just those entries. `make check-consumers` (network,
+  Chromium) installs the packed tarball into the plain HTML, Vite, React 19 and Vue fixtures in
+  `tests/consumers`. Never publish: `npm publish` and `pnpm publish` are the owner's manual step.
+- A product (`src/products/{productId}/`) is a themed demo: `index.ts` plus `theme.css`. The theme
+  overrides only `--su3-sys-*` and `--su3-comp-*` tokens with the same selectors as `tokens.css`,
+  colors as plain `#rrggbb`, and must keep the contrast thresholds (checked for every product by
+  `src/conventions.test.ts`). `make build-storybook` builds every product into
+  `dist/storybook/{productId}/`; `make preview` serves it at http://localhost:5071; clean URLs are
+  `/{productId}/c/{category}/{component}` (`deploy/cloudflare/_redirects` and
+  `deploy/local/nginx.conf` must stay equivalent, which the conventions test checks).
+- Optional per-story VRT settings go in `parameters.vrt`:
+  `{ disable?: boolean; viewports?: ('desktop' | 'mobile')[]; themed?: boolean }` (validated by
+  `tests/vrt/stories.ts` and the conventions test). Shared stories are baselined from the default
+  product `sample`; set `themed: true` on a story that shows a theme's effect so other products
+  capture it too. The comparison is strict (`threshold: 0.01`), so `make vrt` is meaningful only in
+  the Docker image: run `make vrt-update` and **look at the changed images** before committing.
 - After a visual change or a new story, run `make vrt-update` and review the changed baselines in
   `tests/vrt/__screenshots__/`; delete the baselines of removed or renamed stories, and of stories or viewports you exclude
   with `parameters.vrt` (the orphan check cannot see those).
+- No decorators (§2): use `static properties`, `declare`d fields initialised in the constructor,
+  and a guarded `customElements.define`. Open decisions (tsdown output, preview mechanism) are
+  listed in
+  `docs/project_plan.md`; resolve them in the named phase and record them in §17.
 
 ## Component checklist
 
 A new or changed component is done when:
 
-- [ ] `Component.tsx`, `Component.stories.tsx`, `Component.test.tsx` and `index.ts` exist in
-      `components/{category}/{Component}/` (`/new-component` scaffolds them).
-- [ ] The component uses `uic:` utilities with tokens, `cn()` with a `className` prop, and cva for
-      variants; nothing depends on preflight.
+- [ ] `{name}.ts`, `{name}.styles.ts`, `{name}.stories.ts`, `{name}.test.ts` and `index.ts` exist in
+      `components/{category}/{name}/` (`/new-component` scaffolds them).
+- [ ] Styles use tokens only (`--su3-comp-*` with fallbacks), live in Shadow DOM, and handle
+      reduced motion and forced colors.
+- [ ] The public API (properties, slots, parts, events, CSS properties) is documented with JSDoc.
 - [ ] The story file has title `{Category}/{Component}` and a `Default` story; the a11y addon
       reports no violations.
-- [ ] Tests cover the variants and behavior with role-based queries.
-- [ ] It is re-exported from the scope's `index.ts`, and imports follow the dependency direction
-      (`shared` never imports products; products never import each other).
-- [ ] Code, comments and docs are in English, with no emojis.
+- [ ] Vitest Browser Mode tests cover variants, keyboard and pointer behavior, states, form
+      participation (if any) and events, using role-based queries.
+- [ ] It is re-exported from the scope's `index.ts`, imported in `src/shared/all.ts` (shared
+      components), its `package.json` `exports` entry is synced (`make sync-exports`), and imports
+      follow the dependency direction.
+- [ ] Code, comments and docs are in English, with no emojis; nothing is copied from material-web.
 - [ ] `make vrt-update` ran and the changed baselines were reviewed.
 - [ ] A changeset exists if the published package changes (`make changeset`).
 - [ ] `make ci` passes.
@@ -74,20 +117,31 @@ A new or changed component is done when:
 - `README.md` (English) is the user-facing guide; `README_JA.md` mirrors it with the same headings,
   code blocks and links. Update both when commands, setup, the package API or the release flow
   change, then run the `readme-sync` agent.
+- Catalog foundation pages are MDX files in `src/shared/docs/` (titles `Foundation/...`).
+  `THIRD_PARTY_NOTICES.md` must list any font, icon or third-party code that is ever bundled.
 - `docs/project_plan.md` is the specification: record decisions there (with a §17 entry), and
   per-task reasoning in `docs/{yyyy-mm-dd}_{NN}_{overview}/design.md`.
 
 ## Libraries and tooling
 
 - To learn a library/framework API, **use the Context7 MCP** for current docs rather than memory —
-  especially Storybook, Tailwind CSS v4, Vitest, Playwright, tsdown and Changesets, which move fast.
-  For Cloudflare (Pages, `_redirects`, wrangler), use the Cloudflare documentation search.
-- Docker is the default environment. Run commands through `make` targets (`make help` lists them);
-  `local-*` targets exist for running on the host.
-- GitHub Actions (`.github/workflows/`, `docs/project_plan.md` §8): CI runs `pnpm run ci` and the
-  Docker VRT on every PR. Pin any new action to a full commit SHA with a `# vX.Y.Z` comment (Dependabot
-  updates them), keep `permissions` minimal, and keep Cloudflare specifics in `_deploy.yml` and
-  `deploy/cloudflare/`.
+  especially Lit, Storybook, Vitest (Browser Mode), Playwright, tsdown and Changesets, which move
+  fast. For Cloudflare (Workers Static Assets, `_redirects`, wrangler), use the Cloudflare
+  documentation search. Hosting is Workers Static Assets on the free plan; do not introduce paid
+  services (no AWS Secrets Manager, no paid Cloudflare features).
+- Docker is the default environment: run commands through `make` targets (`make help` lists them;
+  `make setup` once, then for example `make ci`, `make dev`). `local-*` targets run the same pnpm
+  scripts on the host (browser tests there need `pnpm exec playwright install chromium` once). The
+  dev image contains Chromium, so `make test` and `make ci` run the browser tests in the container.
+  Do not read or edit `.env.docker`; it is a local copy of `.env.docker.sample`.
+- GitHub Actions (`.github/workflows/`, `docs/project_plan.md` §8): `ci.yml` (`pnpm run ci` with
+  Chromium installed) runs on every PR and, as a reusable workflow, as the `checks` job of the
+  deploy workflows; `vrt.yml` and `consumers.yml` are separate. Pin any new action to a full commit
+  SHA with a `# vX.Y.Z` comment (Dependabot updates them), keep `permissions` minimal and every job's
+  `timeout-minutes` set, and keep Cloudflare specifics in `_deploy.yml` and `deploy/cloudflare/`
+  (the deploy script, `CLOUDFLARE_WORKER_NAME`). `src/conventions.test.ts` checks all of this and
+  `actionlint` (Docker) validates syntax. The owner's one-time setup (Environments, secrets,
+  variables, npm trusted publisher) is in `docs/2026-10-21_05_phase6-github-actions/design.md`.
 - The Node.js major is in `.nvmrc`, `devEngines.runtime` and the Dockerfile `NODE_VERSION`; never
   add `engines` (it would be published). `src/conventions.test.ts` checks this.
 - Hidden folders (e.g. `.tmp`) may be missed by directory listings; find them with `Glob`
@@ -100,17 +154,13 @@ A new or changed component is done when:
 - **git writes**: `add`, `commit`, `push`, `checkout`, `switch`, `branch`, `merge`, `reset`,
   `rebase`, `tag`, `remote`, `stash`. Read-only git (`status`, `diff`, `log`, `show`, `ls-files`)
   is fine.
-- **Deploys and Cloudflare state**: `wrangler deploy`, `wrangler pages deploy`,
-  `wrangler secret` / `wrangler pages secret`, `wrangler pages project`, `wrangler kv`,
-  `wrangler r2`, `wrangler d1`, and mutating Cloudflare MCP tools (`*_create`, `*_delete`,
+- **Deploys and Cloudflare state**: `wrangler deploy`, `wrangler versions`, `wrangler delete`,
+  `wrangler pages deploy`, `wrangler secret` / `wrangler pages secret`, `wrangler pages project`,
+  `wrangler kv`, `wrangler r2`, `wrangler d1`, and mutating Cloudflare MCP tools (`*_create`, `*_delete`,
   `*_update`, `*_edit`, `d1_database_query`). Local `wrangler dev` and builds are allowed.
 - **Publishing / releases**: `npm publish`, `pnpm publish`, `changeset publish` (in any form),
-  `npm dist-tag`, `npm unpublish`, `npm deprecate`, `docker push`, `make secrets-push-cloudflare`,
-  `make deploy*`, `make release*`. `changeset` (creating a changeset file) and `changeset version`
+  `npm dist-tag`, `npm unpublish`, `npm deprecate`, `docker push`, `make deploy*`, `make release*`, `node deploy/cloudflare/deploy.ts` and `pnpm run release` (both change remote state). `changeset` (creating a changeset file) and `changeset version`
   only change local files and are allowed.
-- **Secrets stores**: any `aws secretsmanager` write (`put-secret-value`, `create-secret`,
-  `update-secret`, `delete-secret`). Reading via `make secrets-pull-aws` needs the user's
-  interactive `aws sso login`, so ask the user to run it.
 - **Remote GitHub changes**: `gh pr create/merge/close/edit`, `gh release`, `gh api`, `gh secret`,
   `gh variable`, `gh workflow run`, `gh repo create/edit/delete`, `gh issue create/edit/close`,
   `gh label`.
@@ -140,7 +190,7 @@ cut from `develop`, and merged back into `develop` via PR. Per-task docs live un
 ## Subagents and skills
 
 - **`component-reviewer`** (agent): reviews diffs against the coding conventions above (tokens and
-  prefix, cn/cva, component layout and exports, story naming, dependency direction, a11y,
+  naming, Shadow DOM styling, component layout and exports, story naming, dependency direction, a11y,
   language). Run before every handoff.
 - **`readme-sync`** (agent): keeps `README.md` and `README_JA.md` structurally identical.
 - **`/new-task`** (skill): scaffolds `design.md` + `task.md` for a new unit of work.

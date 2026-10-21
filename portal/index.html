@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>su3-web-materials</title>
+    <meta
+      name="description"
+      content="A catalog of Web Components built with Lit. Pick a themed product to open its Storybook."
+    />
+    <!--
+      Static portal served at "/". scripts/build-storybook-all.ts replaces the products marker
+      below with one section per productId. It is plain HTML and CSS rather than a component page,
+      so it carries its own copy of the Snowfield colors (docs/design/design-language.md).
+    -->
+    <style>
+      :root {
+        color-scheme: light dark;
+        --background: #f5fbff;
+        --surface: #ffffff;
+        --foreground: #151c1f;
+        --muted: #5d6469;
+        --border: #e1e9ef;
+        --link: #006071;
+        --focus: #0096af;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --background: #151c1f;
+          --surface: #282f33;
+          --foreground: #f5fbff;
+          --muted: #cdd6db;
+          --border: #42494d;
+          --link: #54d0ec;
+          --focus: #2eb3ce;
+        }
+      }
+      body {
+        margin: 0;
+        background: var(--background);
+        color: var(--foreground);
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          'Noto Sans',
+          sans-serif;
+        line-height: 1.5;
+      }
+      main {
+        max-width: 48rem;
+        margin: 0 auto;
+        padding: 2.5rem 1rem;
+      }
+      h1 {
+        margin: 0 0 0.25rem;
+        font-size: 1.75rem;
+        line-height: 2.25rem;
+      }
+      .lead {
+        margin: 0 0 2rem;
+        color: var(--muted);
+      }
+      .product {
+        margin: 0 0 1rem;
+        padding: 1rem 1.25rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+      .product h2 {
+        margin: 0 0 0.5rem;
+        font-size: 1.25rem;
+        line-height: 1.75rem;
+      }
+      .product ul {
+        margin: 0;
+        padding-left: 1.25rem;
+      }
+      footer {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 0.875rem;
+      }
+      a {
+        color: var(--link);
+      }
+      a:focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>su3-web-materials</h1>
+      <p class="lead">
+        Web Components built with Lit. Pick a product to open its Storybook, or jump straight to a
+        component. Each product re-themes the same components through design tokens.
+      </p>
+      <!-- products -->
+      <footer>
+        Author:
+        <a href="https://github.com/su3-hokkaido" target="_blank" rel="noopener noreferrer"
+          >@su3-hokkaido</a
+        >
+      </footer>
+    </main>
+  </body>
+</html>

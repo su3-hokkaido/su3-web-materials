@@ -1,0 +1,9 @@
+{
+  "name": "consumer-plain-html",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "lit": "3.3.3",
+    "su3-web-materials": "file:PLACEHOLDER"
+  }
+}
