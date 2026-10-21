@@ -1,0 +1,49 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Foundation/Theming" />
+
+# Theming
+
+Every look is produced by overriding CSS custom properties. There are three token layers:
+
+| Layer     | Prefix                | Purpose                                             |
+| --------- | --------------------- | --------------------------------------------------- |
+| Reference | `--su3-ref-*`         | Raw values: palettes, scales, font stacks           |
+| System    | `--su3-sys-*`         | Roles: `color-accent`, `shape-md`, `space-4`        |
+| Component | `--su3-comp-{name}-*` | Hooks of one component, for example `button-height` |
+
+A component reads its `--su3-comp-*` hook, falls back to a `--su3-sys-*` role, and finally to a
+built-in default. Re-theme the whole catalog by overriding system roles; adjust one component with
+its hooks (listed on the component page as CSS properties).
+
+## Load order
+
+```ts
+import 'su3-web-materials/tokens.css';
+import 'su3-web-materials/themes/acme.css';
+```
+
+`tokens.css` defines the defaults on `:root`. A theme uses the same selectors and is loaded after
+it, so equal-specificity rules win by source order.
+
+## Light and dark
+
+Dark mode follows `prefers-color-scheme`. Set `data-theme="light"` or `data-theme="dark"` on any
+ancestor to force a mode for that subtree; the toolbar of this Storybook does exactly that.
+
+## Writing a theme
+
+A theme overrides only `--su3-sys-*` and `--su3-comp-*` properties, with plain `#rrggbb` colors:
+
+```css
+:root,
+[data-theme='light'] {
+  --su3-sys-color-accent: #693996;
+  --su3-sys-color-on-accent: #f8f2ff;
+  --su3-comp-button-container-shape: var(--su3-sys-shape-pill, 9999px);
+}
+```
+
+Keep the contrast thresholds: 4.5:1 for text and 3:1 for non-text indicators, in light and dark. The
+repository's tests check them for every product, and `make new-product PRODUCT_ID=...` scaffolds a
+theme to start from.

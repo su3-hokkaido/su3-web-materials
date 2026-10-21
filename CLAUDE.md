@@ -117,6 +117,8 @@ A new or changed component is done when:
 - `README.md` (English) is the user-facing guide; `README_JA.md` mirrors it with the same headings,
   code blocks and links. Update both when commands, setup, the package API or the release flow
   change, then run the `readme-sync` agent.
+- Catalog foundation pages are MDX files in `src/shared/docs/` (titles `Foundation/...`).
+  `THIRD_PARTY_NOTICES.md` must list any font, icon or third-party code that is ever bundled.
 - `docs/project_plan.md` is the specification: record decisions there (with a §17 entry), and
   per-task reasoning in `docs/{yyyy-mm-dd}_{NN}_{overview}/design.md`.
 

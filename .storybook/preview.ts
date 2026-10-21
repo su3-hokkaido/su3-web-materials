@@ -34,6 +34,7 @@ const preview: Preview = {
   parameters: {
     controls: { expanded: true },
     layout: 'centered',
+    options: { storySort: { order: ['Foundation', '*'] } },
   },
   tags: ['autodocs'],
 };
