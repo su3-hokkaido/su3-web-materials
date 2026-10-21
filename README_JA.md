@@ -8,8 +8,8 @@
 新入社員が、フォークして名前を変えるだけで、テーマ変更可能でテスト済み、ドキュメント付きのカタログを
 その日のうちに用意できます。
 
-公開カタログ: `https://<your-worker>.workers.dev/`(自分でデプロイしたもののアドレス。
-[他のチームでこのリポジトリを再利用する](#他のチームでこのリポジトリを再利用する)を参照)。
+公開カタログ: https://su3-web-materials.su3-hokkaido-2210.workers.dev/(フォークした場合は自分用の
+コピーをデプロイします。[他のチームでこのリポジトリを再利用する](#他のチームでこのリポジトリを再利用する)を参照)。
 
 コンポーネント: `su3-button`、`su3-icon-button`、`su3-checkbox`、`su3-switch`、`su3-text-field`、
 `su3-divider`。フォームコントロールは form-associated(`ElementInternals`)で、ネイティブのコントロールと
