@@ -6,6 +6,10 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { PORTAL_PLACEHOLDER } from '../scripts/lib/storybook-site.ts';
+import { declaredProperties, themeColorOverrides } from '../scripts/lib/theme-css.ts';
+import { findContrastFailures, resolveColorRoles } from './shared/tokens/contrast.ts';
+import { sysTokenEntries } from './shared/tokens/css.ts';
 
 const root = process.cwd();
 const srcDir = resolve(root, 'src');
@@ -187,6 +191,144 @@ describe('component conventions', () => {
       expect(product).toMatch(kebab);
     },
   );
+});
+
+describe('products', () => {
+  it('has the sample product and a contrasting one', () => {
+    expect(products).toContain('sample');
+    expect(products.length).toBeGreaterThanOrEqual(2);
+  });
+
+  describe.each(products)('product "%s"', (product) => {
+    const dir = join(productsDir, product);
+    const themeFile = join(dir, 'theme.css');
+
+    it('has an index.ts and a theme.css, so every product has the same layout', () => {
+      expect(existsSync(join(dir, 'index.ts'))).toBe(true);
+      expect(existsSync(themeFile)).toBe(true);
+    });
+
+    it('declares only known --su3-sys-* tokens and --su3-comp-* hooks', () => {
+      const knownSys = new Set(sysTokenEntries.map((entry) => `--su3-sys-${entry.name}`));
+      for (const property of declaredProperties(read(themeFile))) {
+        expect(property.startsWith('--su3-comp-') || knownSys.has(property), property).toBe(true);
+      }
+    });
+
+    describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
+      const overrides = themeColorOverrides(read(themeFile))[mode];
+
+      it('uses plain #rrggbb for color roles, so the contrast test can read them', () => {
+        for (const [role, value] of Object.entries(overrides)) {
+          expect(value, role).toMatch(/^#[0-9a-f]{6}$/);
+        }
+      });
+
+      it('keeps every contrast pair above its minimum (4.5:1 text, 3:1 non-text)', () => {
+        expect(findContrastFailures(resolveColorRoles(mode, overrides))).toEqual([]);
+      });
+    });
+
+    it('declares the same dark colors for the attribute and for the OS preference', () => {
+      const { dark, darkPreference } = themeColorOverrides(read(themeFile));
+      expect(darkPreference).toEqual(dark);
+    });
+  });
+});
+
+/** Parses a `_redirects` file into [from, to, status] rules, ignoring comments and blank lines. */
+function readRedirectRules(content: string): [string, string, string][] {
+  return content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '' && !line.startsWith('#'))
+    .map((line) => {
+      const [from = '', to = '', status = ''] = line.split(/\s+/);
+      return [from, to, status];
+    });
+}
+
+describe('site delivery (docs/project_plan.md section 4)', () => {
+  const redirects = readRedirectRules(read(root, 'deploy/cloudflare/_redirects'));
+  const nginx = read(root, 'deploy/local/nginx.conf');
+
+  it('redirects /{productId}/c/{category}/{component} to the Default story, with or without a slash', () => {
+    const target = '/:productId/?path=/story/:category-:component--default';
+    expect(redirects).toEqual([
+      ['/:productId/c/:category/:component', target, '302'],
+      ['/:productId/c/:category/:component/', target, '302'],
+    ]);
+  });
+
+  it('keeps the nginx rule equivalent to the Cloudflare rule', () => {
+    const location =
+      /location ~ \^\/\(([^)]+)\)\/c\/\(([^)]+)\)\/\(([^)]+)\)\/\?\$ \{\s*return (\d+) (\S+);/.exec(
+        nginx,
+      );
+    expect(location, 'nginx.conf needs the clean-URL location').not.toBeNull();
+    const [, product, category, component, status, target] = location ?? [];
+    // The three captures only accept the characters of sanitized ids (see the file's comment).
+    for (const capture of [product, category, component]) expect(capture).toBe('[a-z0-9-]+');
+
+    const [first] = redirects;
+    const translated = (first?.[1] ?? '')
+      .replace(':productId', '$1')
+      .replace(':category', '$2')
+      .replace(':component', '$3');
+    expect(target).toBe(translated);
+    expect(status).toBe(first?.[2]);
+  });
+
+  it('does not serve the _redirects file from nginx, like Cloudflare', () => {
+    expect(nginx).toMatch(/location = \/_redirects \{\s*return 404;/);
+  });
+
+  it('serves the built site as static assets from dist/storybook, without a Worker script', () => {
+    // JSONC as Prettier writes it: full-line comments and trailing commas.
+    const config = JSON.parse(
+      read(root, 'deploy/cloudflare/wrangler.jsonc')
+        .replace(/^\s*\/\/.*$/gm, '')
+        .replace(/,(\s*[}\]])/g, '$1'),
+    ) as {
+      name?: string;
+      main?: string;
+      compatibility_date?: string;
+      assets?: { directory?: string; binding?: string };
+    };
+    expect(config.name).toBeTruthy();
+    expect(config.compatibility_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(config.main).toBeUndefined();
+    expect(config.assets?.binding).toBeUndefined();
+    expect(resolve(root, 'deploy/cloudflare', config.assets?.directory ?? '')).toBe(
+      resolve(root, 'dist/storybook'),
+    );
+  });
+
+  it('has a portal template with the marker the build script fills in', () => {
+    const portal = read(root, 'portal/index.html');
+    expect(portal).toContain(PORTAL_PLACEHOLDER);
+    expect(portal).toMatch(/<html lang="en">/);
+    expect(portal).toMatch(/<title>[^<]+<\/title>/);
+  });
+
+  it('builds every product through build-storybook:all, after generating the manifest, in ci', () => {
+    const { scripts } = JSON.parse(read(root, 'package.json')) as {
+      scripts: Record<string, string>;
+    };
+    expect(scripts['build-storybook:all']).toMatch(
+      /^pnpm run analyze && node scripts\/build-storybook-all\.ts$/,
+    );
+    expect(scripts['ci']).toMatch(/^pnpm run analyze && /);
+    expect(scripts['ci']).toContain('pnpm run build-storybook:all');
+  });
+
+  it('ends the Dockerfile with the nginx preview stage, so an untargeted build produces it', () => {
+    const dockerfile = read(root, 'Dockerfile');
+    const stages = [...dockerfile.matchAll(/^FROM \S+ AS (\S+)$/gm)].map((match) => match[1]);
+    expect(stages).toEqual(['base', 'dev', 'build', 'preview']);
+    expect(dockerfile).toContain('COPY deploy/local/nginx.conf /etc/nginx/conf.d/default.conf');
+    expect(read(root, 'compose.yaml')).toMatch(/preview:[\s\S]*profiles: \[preview\]/);
+  });
 });
 
 describe('provenance (docs/project_plan.md section 1)', () => {

@@ -1,0 +1,44 @@
+/*
+ * Theme of the `acme` product: a contrasting look that is produced by tokens only.
+ *
+ * - Accent: violet (OKLCH hue 305, generated with the same method as the default ramp; the steps
+ *   used here are 50, 100, 200, 300, 400, 500, 600, 700, 800 and 900 of that ramp).
+ * - Buttons are pill shaped; the font is the platform's rounded system font.
+ *
+ * Contrast is enforced by src/products/products.node.test.ts (4.5:1 for text, 3:1 for non-text, in
+ * light and dark). Role values must stay plain hex so that test can read them.
+ * Use the same selectors as tokens.css and load this file after it.
+ */
+
+:root,
+[data-theme='light'] {
+  --su3-sys-color-accent: #693996;
+  --su3-sys-color-accent-hover: #53207d;
+  --su3-sys-color-accent-active: #400568;
+  --su3-sys-color-on-accent: #f8f2ff;
+  --su3-sys-color-accent-subtle: #f1e6ff;
+  --su3-sys-color-on-accent-subtle: #53207d;
+  --su3-sys-color-focus-ring: #9b6bce;
+  --su3-sys-typeface-sans: ui-rounded, 'Hiragino Maru Gothic ProN', system-ui, sans-serif;
+  --su3-comp-button-container-shape: var(--su3-sys-shape-pill, 9999px);
+}
+
+[data-theme='dark'] {
+  --su3-sys-color-accent: #d1a8ff;
+  --su3-sys-color-accent-hover: #e3ccff;
+  --su3-sys-color-accent-active: #f1e6ff;
+  --su3-sys-color-accent-subtle: #53207d;
+  --su3-sys-color-on-accent-subtle: #f1e6ff;
+  --su3-sys-color-focus-ring: #b787ec;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --su3-sys-color-accent: #d1a8ff;
+    --su3-sys-color-accent-hover: #e3ccff;
+    --su3-sys-color-accent-active: #f1e6ff;
+    --su3-sys-color-accent-subtle: #53207d;
+    --su3-sys-color-on-accent-subtle: #f1e6ff;
+    --su3-sys-color-focus-ring: #b787ec;
+  }
+}
