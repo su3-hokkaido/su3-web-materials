@@ -67,7 +67,8 @@ export const Default: Story = {};
 
 /** Emphasis, from the most to the least prominent. */
 export const Variants: Story = {
-  parameters: { controls: { disable: true } },
+  // Also captured in every product's build, so each theme's look is guarded (tests/vrt/stories.ts).
+  parameters: { controls: { disable: true }, vrt: { themed: true } },
   render: () =>
     row(variants.map((variant) => html`<su3-button variant=${variant}>${variant}</su3-button>`)),
 };

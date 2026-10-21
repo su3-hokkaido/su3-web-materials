@@ -91,6 +91,19 @@ build-storybook: ## Build dist/storybook: every product (or only PRODUCT_ID) and
 build: ## Build the npm package into dist (JavaScript, types, tokens.css, themes, manifest)
 	$(RUN) pnpm run build
 
+.PHONY: vrt
+vrt: ## Rebuild every Storybook and run the visual regression test in the Playwright image
+	$(RUN) pnpm run build-storybook:all
+	@# Created here so that Docker does not create the bind-mount sources as root.
+	mkdir -p test-results playwright-report
+	$(COMPOSE) --profile vrt run --rm --build vrt
+
+.PHONY: vrt-update
+vrt-update: ## Rebuild every Storybook and update the changed or missing VRT baselines
+	$(RUN) pnpm run build-storybook:all
+	mkdir -p test-results playwright-report
+	$(COMPOSE) --profile vrt run --rm --build vrt node_modules/.bin/playwright test --update-snapshots=changed
+
 .PHONY: check-package
 check-package: ## Check the built package (exports, side effects, tokens, manifest, publint, attw)
 	$(RUN) pnpm run check:package

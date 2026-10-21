@@ -1,7 +1,7 @@
 import { existsSync, globSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { StorybookConfig } from '@storybook/web-components-vite';
-import { mergeConfig } from 'vite';
+import { mergeConfig, type Plugin } from 'vite';
 
 const DEFAULT_PRODUCT_ID = 'sample';
 
@@ -27,6 +27,26 @@ if (!hasProduct && productId !== DEFAULT_PRODUCT_ID) {
   );
 }
 
+const srcDir = resolve(import.meta.dirname, '../src');
+
+/**
+ * package.json `sideEffects` describes the published dist files. Vite applies it to this project's
+ * own src modules too, which marks each component's registering `index.ts` as side-effect free; a
+ * story's `import './index.ts'` is then dropped and <su3-button> is never defined in the built
+ * Storybook (found by the VRT). Modules under src are therefore always treated as having side
+ * effects; a build option cannot do this, because Vite sets the flag per resolved module.
+ */
+const keepSourceSideEffects: Plugin = {
+  name: 'su3:keep-source-side-effects',
+  enforce: 'pre',
+  async resolveId(source, importer, options) {
+    if (!importer || !source.startsWith('.')) return null;
+    const resolved = await this.resolve(source, importer, { ...options, skipSelf: true });
+    if (!resolved || resolved.external || !resolved.id.startsWith(srcDir)) return null;
+    return { ...resolved, moduleSideEffects: true };
+  },
+};
+
 const config: StorybookConfig = {
   stories: [
     '../src/shared/**/*.stories.ts',
@@ -42,6 +62,7 @@ const config: StorybookConfig = {
   // (token overrides, docs/project_plan.md section 4) or an empty stylesheet.
   viteFinal: (viteConfig) =>
     mergeConfig(viteConfig, {
+      plugins: [keepSourceSideEffects],
       resolve: {
         alias: {
           '@product-theme': existsSync(productTheme)
