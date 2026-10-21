@@ -1,0 +1,49 @@
+# syntax=docker/dockerfile:1
+
+# Keep the major in sync with .nvmrc and devEngines.runtime in package.json (checked by
+# src/conventions.test.ts).
+ARG NODE_VERSION=26
+
+# --- base: Node.js + the pnpm version pinned in package.json ---------------------------------
+FROM node:${NODE_VERSION}-trixie-slim AS base
+
+WORKDIR /app
+
+# Node.js 25+ no longer bundles Corepack, so pnpm is installed with npm. The version comes from
+# the packageManager field so that package.json stays the single source of truth.
+COPY package.json /tmp/package.json
+RUN npm install --global "pnpm@$(node -p "require('/tmp/package.json').packageManager.split('@')[1].split('+')[0]")" \
+  && npm cache clean --force \
+  && rm /tmp/package.json
+
+# node_modules is a named volume in compose.yaml. Creating the directory here makes the volume
+# owned by the node user, and keeping the pnpm store inside it lets pnpm hard-link packages.
+ENV npm_config_store_dir=/app/node_modules/.pnpm-store
+RUN mkdir -p /app/node_modules && chown -R node:node /app
+
+USER node
+
+# --- dev: Storybook dev server and the tool container; the source is bind-mounted -------------
+FROM base AS dev
+
+# Vitest Browser Mode needs Chromium (docs/project_plan.md section 11). The official Playwright
+# image ships a different Node.js major than devEngines.runtime, so Chromium is installed here
+# instead: the Playwright CLI at exactly the `playwright` version from package.json fetches the
+# matching browser and its system libraries into a shared location, then is removed again.
+USER root
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+COPY package.json /tmp/package.json
+RUN npm install --global "playwright@$(node -p "require('/tmp/package.json').devDependencies.playwright")" \
+  && playwright install --with-deps chromium \
+  && npm uninstall --global playwright \
+  && npm cache clean --force \
+  && rm -rf /var/lib/apt/lists/* /tmp/package.json
+USER node
+
+# Listen on every interface so the published port is reachable from the host. The host-side
+# `pnpm dev` keeps Storybook's default of localhost only.
+ENV SBCONFIG_HOSTNAME=0.0.0.0
+
+EXPOSE 5070
+
+CMD ["pnpm", "run", "dev", "--ci"]
