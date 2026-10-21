@@ -47,3 +47,26 @@ ENV SBCONFIG_HOSTNAME=0.0.0.0
 EXPOSE 5070
 
 CMD ["pnpm", "run", "dev", "--ci"]
+
+# --- build: the static site, every product's Storybook plus the portal (`dist/storybook`) -----
+# Self-contained: dependencies are installed from the lockfile and the source is copied in, so the
+# result does not depend on the dev container or the host. No Chromium is needed to build.
+FROM base AS build
+
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# uid/gid 1000 is the node user of the official image.
+RUN --mount=type=cache,target=/home/node/.cache/pnpm-store,uid=1000,gid=1000 \
+  npm_config_store_dir=/home/node/.cache/pnpm-store pnpm install --frozen-lockfile
+
+COPY --chown=node:node . .
+RUN pnpm run build-storybook:all
+
+# --- preview: nginx serving the build with the same clean-URL rule as Cloudflare -------------
+# Kept as the last stage, so a build without --target produces this image.
+# The unprivileged image runs nginx as a non-root user and listens on 8080.
+FROM nginxinc/nginx-unprivileged:1.30-alpine AS preview
+
+COPY deploy/local/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist/storybook /usr/share/nginx/html
+
+EXPOSE 8080

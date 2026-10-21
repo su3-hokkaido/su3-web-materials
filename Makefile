@@ -31,6 +31,10 @@ setup: ## Copy .env.*.sample files (never overwrites), build the image and insta
 
 ##@ Docker
 
+.PHONY: preview
+preview: ## Build every product and serve it with nginx in the foreground (http://localhost:5071)
+	$(COMPOSE) --profile preview up --build preview
+
 .PHONY: dev
 dev: ## Start the Storybook dev server in the foreground (PRODUCT_ID=sample, http://localhost:5070)
 	$(COMPOSE) up storybook
@@ -80,8 +84,8 @@ analyze: ## Regenerate custom-elements.json from the component sources
 	$(RUN) pnpm run analyze
 
 .PHONY: build-storybook
-build-storybook: ## Build the static Storybook into storybook-static
-	$(RUN) pnpm run build-storybook
+build-storybook: ## Build dist/storybook: every product (or only PRODUCT_ID) and the portal
+	$(RUN) pnpm run build-storybook:all $(PRODUCT_ID)
 
 .PHONY: ci
 ci: ## Run the CI checks (analyze, format check, lint, typecheck, tests, Storybook build)
@@ -118,8 +122,8 @@ local-test: ## Run the tests with coverage on the host
 	pnpm run test
 
 .PHONY: local-build-storybook
-local-build-storybook: ## Build the static Storybook into storybook-static on the host
-	pnpm run build-storybook
+local-build-storybook: ## Build dist/storybook (every product or only PRODUCT_ID) on the host
+	pnpm run build-storybook:all $(PRODUCT_ID)
 
 .PHONY: local-ci
 local-ci: ## Run the CI checks on the host

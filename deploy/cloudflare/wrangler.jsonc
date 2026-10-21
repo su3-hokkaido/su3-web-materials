@@ -1,0 +1,15 @@
+// Cloudflare Workers Static Assets (docs/project_plan.md section 4): the built site is served as
+// static files with no Worker script. `_redirects` in the asset root carries the clean-URL rule.
+// Paths are relative to this file. Build the site first: `make build-storybook`.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "su3-web-materials",
+  // The day this file was written, as the Cloudflare documentation asks. Update it deliberately
+  // (and re-run the redirect checks) when adopting newer runtime behavior.
+  "compatibility_date": "2026-10-21",
+  "assets": {
+    "directory": "../../dist/storybook",
+    // /sample -> /sample/ and /sample/index.html -> /sample/ (the default, stated for clarity).
+    "html_handling": "auto-trailing-slash",
+  },
+}
