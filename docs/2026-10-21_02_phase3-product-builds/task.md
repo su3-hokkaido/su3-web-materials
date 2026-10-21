@@ -4,9 +4,9 @@ Each item maps to one commit. Check items off as they complete.
 
 - [x] Add the `sample` and `acme` products (`index.ts`, `theme.css`), wire the product theme into
       `.storybook`, and share the contrast helper with a product theme accessibility test
-- [ ] Add `scripts/lib` (products, storybook-site, size limits) with unit tests and extend the Node
+- [x] Add `scripts/lib` (products, storybook-site, size limits) with unit tests and extend the Node
       Vitest project
-- [ ] Add `scripts/build-storybook-all.ts` and `portal/index.html`; add the `build-storybook:all`
+- [x] Add `scripts/build-storybook-all.ts` and `portal/index.html`; add the `build-storybook:all`
       script and switch `ci` to it
 - [ ] Add `deploy/cloudflare/_redirects` and `wrangler.jsonc`, install `wrangler`, and verify the
       placeholder expansion with `wrangler dev`

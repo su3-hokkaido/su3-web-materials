@@ -21,13 +21,14 @@
     "analyze": "cem analyze",
     "dev": "pnpm run analyze && storybook dev -p 5070",
     "build-storybook": "pnpm run analyze && storybook build",
+    "build-storybook:all": "pnpm run analyze && node scripts/build-storybook-all.ts",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
-    "ci": "pnpm run analyze && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build-storybook"
+    "ci": "pnpm run analyze && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build-storybook:all"
   },
   "dependencies": {
     "lit": "^3.3.3"
