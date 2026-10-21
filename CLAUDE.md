@@ -36,8 +36,10 @@ Summary of `docs/project_plan.md` §3, §4, §10 and §13:
   `src/products/{productId}/components/{category}/{name}/`. `{category}` is lower-case kebab-case,
   `{name}` is the lower-case kebab-case component name (`button`, `icon-button`).
 - Each component directory contains exactly `{name}.ts`, `{name}.styles.ts`, `{name}.stories.ts`,
-  `{name}.test.ts` and `index.ts`. Shared behavior goes in `src/shared/behaviors/` as base classes and
-  tokens in `src/shared/tokens/`.
+  `{name}.test.ts` and `index.ts`. Shared behavior goes in `src/shared/behaviors/` as base classes
+  (`FormAssociatedElement`, `FormSubmitterElement`, `FormCheckableElement`), shared CSS (state layer,
+  focus ring, touch target) in `src/shared/styles/` as token-only `css` fragments (there is no ripple
+  and no `foundation` category), and tokens in `src/shared/tokens/`.
 - Element tag `su3-{name}`, class `Su3{Name}`, `HTMLElementTagNameMap` declared. Each component
   class module `{name}.ts` has no side effects; the component's `index.ts` registers the element with
   `defineElement` and re-exports it; the package root `src/shared/index.ts` re-exports classes and

@@ -51,6 +51,26 @@
       "types": "./dist/shared/components/buttons/button/index.d.ts",
       "default": "./dist/shared/components/buttons/button/index.js"
     },
+    "./checkbox.js": {
+      "types": "./dist/shared/components/selection/checkbox/index.d.ts",
+      "default": "./dist/shared/components/selection/checkbox/index.js"
+    },
+    "./divider.js": {
+      "types": "./dist/shared/components/containment/divider/index.d.ts",
+      "default": "./dist/shared/components/containment/divider/index.js"
+    },
+    "./icon-button.js": {
+      "types": "./dist/shared/components/buttons/icon-button/index.d.ts",
+      "default": "./dist/shared/components/buttons/icon-button/index.js"
+    },
+    "./switch.js": {
+      "types": "./dist/shared/components/selection/switch/index.d.ts",
+      "default": "./dist/shared/components/selection/switch/index.js"
+    },
+    "./text-field.js": {
+      "types": "./dist/shared/components/inputs/text-field/index.d.ts",
+      "default": "./dist/shared/components/inputs/text-field/index.js"
+    },
     "./acme": {
       "types": "./dist/products/acme/index.d.ts",
       "default": "./dist/products/acme/index.js"

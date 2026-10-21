@@ -34,6 +34,8 @@ export const contrastPairs: readonly (readonly [string, string, number])[] = [
   ['on-accent-subtle', 'accent-subtle', 4.5],
   ['on-danger', 'danger', 4.5],
   ['danger', 'surface', 4.5],
+  ['danger', 'surface-sunken', 4.5],
+  ['text-muted', 'surface-sunken', 4.5],
   ['border-strong', 'surface', 3],
   ['border-strong', 'surface-sunken', 3],
   ['focus-ring', 'surface', 3],

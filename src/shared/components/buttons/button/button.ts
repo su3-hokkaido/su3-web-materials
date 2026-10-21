@@ -1,4 +1,4 @@
-import { html, LitElement, nothing, type PropertyDeclarations, type TemplateResult } from 'lit';
+import { html, nothing, type PropertyDeclarations, type TemplateResult } from 'lit';
 import { FormSubmitterElement } from '../../../behaviors/index.ts';
 import { buttonStyles } from './button.styles.ts';
 
@@ -55,12 +55,6 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 export class Su3Button extends FormSubmitterElement {
   static override styles = buttonStyles;
 
-  /** Keeps `host.focus()` and label clicks working although the interactive element is inside. */
-  static override shadowRootOptions: ShadowRootInit = {
-    ...LitElement.shadowRootOptions,
-    delegatesFocus: true,
-  };
-
   static override properties: PropertyDeclarations = {
     variant: { reflect: true },
     size: { reflect: true },
@@ -69,7 +63,6 @@ export class Su3Button extends FormSubmitterElement {
     target: {},
     download: {},
     rel: {},
-    accessibleName: { attribute: 'aria-label' },
     hasLabel: { state: true },
   };
 
@@ -98,12 +91,6 @@ export class Su3Button extends FormSubmitterElement {
   /** Link relationship. Only used with `href`. */
   declare rel: string;
 
-  /**
-   * The accessible name for the inner control, read from the host's `aria-label`. Use it when the
-   * label slot has no text (for example an icon-only button).
-   */
-  declare accessibleName: string | null;
-
   /** Whether the default slot has content; an icon-only button has none and is laid out square. */
   declare hasLabel: boolean;
 
@@ -116,7 +103,6 @@ export class Su3Button extends FormSubmitterElement {
     this.target = '';
     this.download = '';
     this.rel = '';
-    this.accessibleName = null;
     this.hasLabel = true;
   }
 
