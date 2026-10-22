@@ -15,3 +15,4 @@ import './components/navigation/navigation-bar/index.ts';
 import './components/navigation/navigation-rail/index.ts';
 import './components/navigation/navigation-drawer/index.ts';
 import './components/feedback/snackbar/index.ts';
+import './components/feedback/tooltip/index.ts';

@@ -122,6 +122,10 @@ Buttons use `md`; a product may switch them to `pill` by overriding
 - Badges are 20px high pills (an 8px dot without text), with `label-sm` type.
 - Snackbars use the inverse of the page (`text` as the container, `surface` as the label), `sm`
   corners and `elevation-3`, sit 16px above the bottom edge and are at most 576px wide.
+- Tooltips use the inverse of the page like snackbars, `sm` corners, `elevation-2`, `label-sm` type,
+  8px of space around the text and are at most 240px wide, 8px from their trigger. A tooltip is
+  supplementary: its description reaches the trigger through `aria-describedby`, which does not cross
+  into the inner control of a shadow-based trigger, so the trigger keeps its own accessible name.
 - Cards use `md` corners, 16px padding and a 12px gap between areas; media is full-bleed.
 - Checkbox box 20px (`--su3-sys-size-checkbox`); switch track 44x24px and thumb 16px
   (`--su3-sys-size-switch-track-width`, `-track-height`, `-thumb`). Icon buttons are square at the
