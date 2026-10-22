@@ -218,6 +218,12 @@ Then add a trusted publisher for your repository naming the workflow file `relea
 repository variable `NPM_PUBLISH_REPOSITORY` to `owner/repo`. Until it is set, the release workflow
 never tries to publish.
 
+When you add the trusted publisher, grant it the plain `npm publish` permission (not only
+`npm stage publish` and `npm dist-tag`) and leave the environment name empty, because `release.yml`
+uses no environment. If a release fails, the npm error tells you where to look: a `404 Not Found`
+means the OIDC login did not happen, and a `403 OIDC permission denied` means the trusted publisher
+does not match the workflow run or lacks the publish permission.
+
 ## Make commands
 
 Run `make help` for the full list. Each target also has a `local-*` variant for the host.
