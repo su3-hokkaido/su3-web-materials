@@ -12,3 +12,4 @@ import './components/buttons/segment/index.ts';
 import './components/buttons/segmented-button/index.ts';
 import './components/navigation/navigation-item/index.ts';
 import './components/navigation/navigation-bar/index.ts';
+import './components/feedback/snackbar/index.ts';

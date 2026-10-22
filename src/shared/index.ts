@@ -35,3 +35,8 @@ export {
 export { Su3SegmentedButton } from './components/buttons/segmented-button/segmented-button.ts';
 export { Su3NavigationItem } from './components/navigation/navigation-item/navigation-item.ts';
 export { Su3NavigationBar } from './components/navigation/navigation-bar/navigation-bar.ts';
+export {
+  Su3Snackbar,
+  type SnackbarCloseDetail,
+  type SnackbarCloseReason,
+} from './components/feedback/snackbar/snackbar.ts';

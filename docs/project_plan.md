@@ -542,7 +542,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
 8. **README / README_JA / CLAUDE.md / catalog pages** (done, §17); the first manual npm publish is
    the owner's step, documented in the README.
 9. **After the MVP** (one task each, in priority order): Card (done, §17), Badge (done, §17), Segmented button (done, §17), Navigation
-   bar (done, §17; drawer and rail remain), Snackbar, Tooltip, Top app bar, Select, Dialog, Menu, then pickers and Data table.
+   bar (done, §17), Snackbar (done, §17), Navigation rail, Navigation drawer, Tooltip, Top app bar, Select, Dialog, Menu, then pickers and Data table.
 
 ## 15. Acceptance Criteria
 
@@ -837,3 +837,12 @@ and explain the reasoning in the PR description.
     drawer remain later tasks.
   - Decisions: plain tab order (no roving tabindex); the application owns routing; the bar never
     deselects.
+- **Snackbar completed (2026-10-22)**: `su3-snackbar`, in the `feedback` category. Details:
+  `docs/2026-10-22_05_snackbar/`.
+  - Delivered: `src/shared/components/feedback/snackbar/` with `open`, `duration` (default 4000 ms,
+    `0` persistent), an `action` slot, a `dismissible` close button with `close-label`, a `close`
+    event with `detail.reason` (`timeout`, `dismiss`, `action`), the Popover API for the top layer, a
+    polite `status` live region, a timer that pauses on hover and focus, and the hooks
+    `--su3-comp-snackbar-*`; no new sys tokens (the inverse surface uses `text` and `surface`).
+  - Decisions: the element is the API and queues belong to the application; text buttons in the
+    `action` slot take `--su3-comp-snackbar-action-color`.

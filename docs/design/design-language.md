@@ -114,6 +114,8 @@ Buttons use `md`; a product may switch them to `pill` by overriding
 - Navigation bar items are equal-width columns with a 64x32px pill indicator behind a 24px icon and a
   `label-sm` label; the selected item is marked by the tinted pill and `aria-current`.
 - Badges are 20px high pills (an 8px dot without text), with `label-sm` type.
+- Snackbars use the inverse of the page (`text` as the container, `surface` as the label), `sm`
+  corners and `elevation-3`, sit 16px above the bottom edge and are at most 576px wide.
 - Cards use `md` corners, 16px padding and a 12px gap between areas; media is full-bleed.
 - Checkbox box 20px (`--su3-sys-size-checkbox`); switch track 44x24px and thumb 16px
   (`--su3-sys-size-switch-track-width`, `-track-height`, `-thumb`). Icon buttons are square at the
