@@ -9,6 +9,10 @@ import { FormAssociatedElement, type FormRestoreState } from '../../../behaviors
 import type { Su3Segment, SegmentSize } from '../segment/segment.ts';
 import { segmentedButtonStyles } from './segmented-button.styles.ts';
 
+function sameValues(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
 /**
  * A connected row of `su3-segment` options. By default exactly one can be selected (radio
  * semantics: Arrow keys move and select, only one segment is a tab stop); with `multiple` any number
@@ -18,7 +22,7 @@ import { segmentedButtonStyles } from './segmented-button.styles.ts';
  * with the `selected` attribute; a form reset returns to that state. The group is form-associated: in
  * single mode it submits `name=value` of the selected segment, in multiple mode one entry per
  * selected segment, and `required` makes it invalid while nothing is selected. Name the group with
- * `aria-label` on the host. `input` and `change` fire on the group when the user changes the
+ * `aria-label` on the host (`aria-labelledby` cannot cross the shadow boundary). `input` and `change` fire on the group when the user changes the
  * selection.
  *
  * @tagname su3-segmented-button
@@ -27,6 +31,10 @@ import { segmentedButtonStyles } from './segmented-button.styles.ts';
  * @slot - The `su3-segment` options.
  *
  * @csspart group - The element that carries the group role.
+ *
+ * The same `--su3-comp-segmented-button-*` hooks are read by every `su3-segment`; set them on the
+ * group to theme all segments at once. The most common ones are listed here, the complete list is on
+ * `su3-segment`.
  *
  * @cssprop [--su3-comp-segmented-button-container-color] - Background of an unselected segment.
  * @cssprop [--su3-comp-segmented-button-selected-container-color] - Background of a selected segment.
@@ -95,7 +103,7 @@ export class Su3SegmentedButton extends FormAssociatedElement {
     }
     const selected = this.#selectedValues();
     if (this.multiple) {
-      if (selected.join('\u0000') !== this.values.join('\u0000')) this.values = selected;
+      if (!sameValues(selected, this.values)) this.values = selected;
     } else {
       this.value = selected[0] ?? '';
     }
@@ -235,12 +243,20 @@ export class Su3SegmentedButton extends FormAssociatedElement {
     if (segment) this.#select(segment);
   };
 
+  /** A segment's `selected` or `disabled` changed outside the group's own methods. */
+  #onSegmentChange = (): void => {
+    this.#sync();
+    this.#updateFormValue();
+  };
+
   #onKeydown = (event: KeyboardEvent): void => {
     if (this.multiple) return;
+    // The row runs right to left in RTL, so the horizontal arrows swap.
+    const forward = getComputedStyle(this).direction === 'rtl' ? -1 : 1;
     const keys: Record<string, number> = {
-      ArrowRight: 1,
+      ArrowRight: forward,
       ArrowDown: 1,
-      ArrowLeft: -1,
+      ArrowLeft: -forward,
       ArrowUp: -1,
     };
     const current = this.#segmentOf(event);
@@ -270,6 +286,7 @@ export class Su3SegmentedButton extends FormAssociatedElement {
       aria-disabled=${this.isDisabled ? 'true' : nothing}
       @click=${this.#onClick}
       @keydown=${this.#onKeydown}
+      @su3-segment-change=${this.#onSegmentChange}
     >
       <slot @slotchange=${this.#onSlotChange}></slot>
     </div>`;
