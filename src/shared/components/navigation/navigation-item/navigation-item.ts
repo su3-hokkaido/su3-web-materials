@@ -8,24 +8,29 @@ import {
 } from 'lit';
 import { navigationItemStyles } from './navigation-item.styles.ts';
 
+/** Where the label sits: below the icon (`stacked`, bar and rail) or beside it (`inline`, drawer). */
+export type NavigationItemLayout = 'stacked' | 'inline';
+
 /**
- * One destination of a `su3-navigation-bar`: an icon in a pill indicator, a label below it and an
- * optional badge. With `href` it renders an anchor, otherwise a button; the selected item is marked
- * with `aria-current="page"`. The bar owns selection, so use an item inside a bar.
+ * One destination of a `su3-navigation-bar`, `-rail` or `-drawer`: an icon in a pill indicator, a
+ * label below or beside it and an optional badge. With `href` it renders an anchor, otherwise a
+ * button; the selected item is marked with `aria-current="page"`. The container owns selection, so
+ * use an item inside a bar, rail or drawer. The container picks the layout: `stacked` (label below
+ * the icon, the default) or `inline` (label beside the icon, the pill covers the whole row).
  *
  * Put the label in the default slot, the icon in the `icon` slot and, optionally, a `su3-badge` in
- * the `badge` slot. The application owns routing: it listens to the bar's `change` event (or follows
- * the link) and sets `selected`.
+ * the `badge` slot. The application owns routing: it listens to the container's `change` event (or
+ * follows the link) and sets `selected`.
  *
  * @tagname su3-navigation-item
- * @summary One destination of a navigation bar.
+ * @summary One destination of a navigation bar, rail or drawer.
  *
  * @slot - The label.
  * @slot icon - The icon (decorative; the label names the item).
  * @slot badge - A `su3-badge` shown at the top end of the icon.
  *
  * @csspart control - The inner link or button.
- * @csspart indicator - The pill behind the icon.
+ * @csspart indicator - The pill behind the icon (the icon wrapper in the inline layout).
  * @csspart label - The wrapper around the default slot.
  *
  * @cssprop [--su3-comp-navigation-bar-label-color] - Label and icon color of an unselected item.
@@ -37,8 +42,8 @@ import { navigationItemStyles } from './navigation-item.styles.ts';
  * @cssprop [--su3-comp-navigation-bar-focus-ring-width] - Focus indicator thickness.
  * @cssprop [--su3-comp-navigation-bar-focus-ring-offset] - Gap between the control and its focus ring.
  *
- * @fires su3-navigation-item-change - `selected` or `disabled` changed, for any reason. The bar
- * listens to it to keep its value current. Internal: it does not leave the bar.
+ * @fires su3-navigation-item-change - `selected` or `disabled` changed, for any reason. The
+ * container listens to it to keep its value current. Internal: it does not leave the container.
  */
 export class Su3NavigationItem extends LitElement {
   static override styles = navigationItemStyles;
@@ -53,6 +58,7 @@ export class Su3NavigationItem extends LitElement {
     value: {},
     selected: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
+    layout: { reflect: true },
     href: {},
     target: {},
     rel: {},
@@ -67,6 +73,9 @@ export class Su3NavigationItem extends LitElement {
 
   /** Makes the item unavailable. */
   declare disabled: boolean;
+
+  /** Where the label sits; any value other than `inline` is the stacked layout. Set by the drawer. */
+  declare layout: NavigationItemLayout;
 
   /** Renders a link to this address instead of a button. */
   declare href: string;
@@ -85,6 +94,7 @@ export class Su3NavigationItem extends LitElement {
     this.value = '';
     this.selected = false;
     this.disabled = false;
+    this.layout = 'stacked';
     this.href = '';
     this.target = '';
     this.rel = '';

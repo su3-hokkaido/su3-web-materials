@@ -542,7 +542,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
 8. **README / README_JA / CLAUDE.md / catalog pages** (done, §17); the first manual npm publish is
    the owner's step, documented in the README.
 9. **After the MVP** (one task each, in priority order): Card (done, §17), Badge (done, §17), Segmented button (done, §17), Navigation
-   bar (done, §17), Snackbar (done, §17), Navigation rail, Navigation drawer, Tooltip, Top app bar, Select, Dialog, Menu, then pickers and Data table.
+   bar (done, §17), Snackbar (done, §17), Navigation rail (done, §17), Navigation drawer (done, §17), Tooltip, Top app bar, Select, Dialog, Menu, then pickers and Data table.
 
 ## 15. Acceptance Criteria
 
@@ -846,3 +846,27 @@ and explain the reasoning in the PR description.
     `--su3-comp-snackbar-*`; no new sys tokens (the inverse surface uses `text` and `surface`).
   - Decisions: the element is the API and queues belong to the application; text buttons in the
     `action` slot take `--su3-comp-snackbar-action-color`.
+- **Navigation rail completed (2026-10-22)**: `su3-navigation-rail`, in the `navigation` category.
+  Details: `docs/2026-10-22_06_navigation-rail/`.
+  - Delivered: `src/shared/components/navigation/navigation-rail/` with a `<nav>` landmark, a column
+    of `su3-navigation-item` destinations, an optional `header` slot, the same `value` / `change` /
+    `aria-current="page"` model as the bar, and the hooks `--su3-comp-navigation-rail-*`
+    (container color, border color, width, item gap); no new sys tokens. The items are reused
+    unchanged and keep reading `--su3-comp-navigation-bar-*`.
+  - Decisions: the selection logic was nearly identical to the bar's, so it moved to the shared
+    base class `NavigationSelectionElement` in `src/shared/behaviors/` (exported from the package
+    root); the bar extends it with its tests unchanged. The drawer extends it too.
+- **Navigation drawer completed (2026-10-22)**: `su3-navigation-drawer`, in the `navigation`
+  category. Details: `docs/2026-10-22_07_navigation-drawer/`.
+  - Delivered: `src/shared/components/navigation/navigation-drawer/` with a standard mode (part of
+    the layout) and a `modal` mode (a native `<dialog>` with a scrim, `open`, Escape, a scrim click
+    and `close-on-select`), a `close` event with `detail.reason` (`escape`, `scrim`, `select`), a
+    `header` slot, slotted `h2`-`h4` section headings, and the hooks `--su3-comp-navigation-drawer-*`
+    (container color, border color, width, scrim color, shape, elevation, heading color); no new sys
+    tokens. `su3-navigation-item` gained `layout` (`stacked` default, `inline`): the label beside the
+    icon and the pill on the whole row; the drawer sets `inline` on its items, and no existing
+    baseline changed.
+  - Decisions: a native `<dialog>` gives the scrim, focus trap, Escape and focus return, with
+    enter and exit transitions (`@starting-style`, `allow-discrete`) that reduced motion removes;
+    `change` fires before `close` on a selection; headings are plain slotted elements, not a
+    component; the item's `layout` property replaces a separate drawer item.
