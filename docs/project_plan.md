@@ -541,7 +541,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
    IconButton, Checkbox, Switch, TextField, Divider.
 8. **README / README_JA / CLAUDE.md / catalog pages** (done, §17); the first manual npm publish is
    the owner's step, documented in the README.
-9. **After the MVP** (one task each, in priority order): Card, Badge, Segmented button, Navigation
+9. **After the MVP** (one task each, in priority order): Card (done, §17), Badge, Segmented button, Navigation
    bar / drawer, Snackbar, Tooltip, Top app bar, Select, Dialog, Menu, then pickers and Data table.
 
 ## 15. Acceptance Criteria
@@ -798,3 +798,12 @@ and explain the reasoning in the PR description.
   - Notes: the live catalog URL in the README is a placeholder for the owner's deployment. The first
     npm publish, the Cloudflare and GitHub setup and the trusted publisher are the owner's steps
     (README, "Release flow" and "One-time setup").
+- **Card completed (2026-10-22)**: `su3-card` is the first post-MVP component. Details:
+  `docs/2026-10-22_01_card/`.
+  - Delivered: `src/shared/components/containment/card/` with the variants `elevated`, `filled` and
+    `outlined`, the slots `media`, `header`, default and `actions` (empty slots collapse through
+    `slotchange`), and the hooks `--su3-comp-card-*` including `text-color`; no new sys tokens.
+  - Verified: 11 browser tests; axe reports 0 violations in every story and both themes (it found
+    that a re-themed card needs a text-color hook, which was added); new VRT baselines reviewed.
+  - Decisions: the card is a static container (no role, no focus, no click handling); an interactive
+    card is a later task.

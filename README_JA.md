@@ -216,6 +216,12 @@ npm publish --access public    # from a clean checkout of main, once
 リポジトリ変数 `NPM_PUBLISH_REPOSITORY` に `owner/repo` を設定します。設定するまで、リリースワークフローは
 公開を試みません。
 
+trusted publisher を追加するときは、`npm stage publish` と `npm dist-tag` だけでなく、通常の
+`npm publish` の権限も付与し、environment 名は空欄にしてください。`release.yml` は environment を使わない
+ためです。リリースが失敗した場合、npm のエラーが調べる場所を示します。`404 Not Found` は OIDC
+ログインが行われなかったこと、`403 OIDC permission denied` は trusted publisher がワークフローの実行と
+一致しないか、公開の権限がないことを意味します。
+
 ## Make コマンド
 
 全一覧は `make help` で確認できます。各ターゲットにはホスト用の `local-*` もあります。
