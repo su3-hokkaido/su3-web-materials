@@ -541,7 +541,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
    IconButton, Checkbox, Switch, TextField, Divider.
 8. **README / README_JA / CLAUDE.md / catalog pages** (done, §17); the first manual npm publish is
    the owner's step, documented in the README.
-9. **After the MVP** (one task each, in priority order): Card (done, §17), Badge (done, §17), Segmented button, Navigation
+9. **After the MVP** (one task each, in priority order): Card (done, §17), Badge (done, §17), Segmented button (done, §17), Navigation
    bar / drawer, Snackbar, Tooltip, Top app bar, Select, Dialog, Menu, then pickers and Data table.
 
 ## 15. Acceptance Criteria
@@ -818,3 +818,13 @@ and explain the reasoning in the PR description.
     filled with `text-muted`); `check:package` and `check:consumers` pass.
   - Notes: a first `make vrt-update` run died when Docker Desktop stopped; the rerun after
     restarting it completed.
+- **Segmented button completed (2026-10-22)**: `su3-segmented-button` (group) and `su3-segment`
+  (option), the first component made of two cooperating elements. Details:
+  `docs/2026-10-22_03_segmented-button/`.
+  - Delivered: `src/shared/components/buttons/segmented-button/` and `.../segment/` with single and
+    `multiple` selection, three sizes, a form-associated group (`name`, `required`, reset, restore,
+    `input` and `change`), a `radiogroup` with roving tabindex in single mode and a `group` of
+    `aria-pressed` buttons in multiple mode, and the hooks `--su3-comp-segmented-button-*`; no new
+    sys tokens. `segmented-button.js` registers both elements.
+  - Decisions: selection lives on the segments and the group derives `value` / `values`; a
+    single-select group never deselects; the group handles click and keydown once.
