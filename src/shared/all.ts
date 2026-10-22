@@ -7,3 +7,4 @@ import './components/inputs/text-field/index.ts';
 import './components/buttons/icon-button/index.ts';
 import './components/containment/divider/index.ts';
 import './components/containment/card/index.ts';
+import './components/feedback/badge/index.ts';
