@@ -51,6 +51,10 @@
       "types": "./dist/shared/components/buttons/button/index.d.ts",
       "default": "./dist/shared/components/buttons/button/index.js"
     },
+    "./card.js": {
+      "types": "./dist/shared/components/containment/card/index.d.ts",
+      "default": "./dist/shared/components/containment/card/index.js"
+    },
     "./checkbox.js": {
       "types": "./dist/shared/components/selection/checkbox/index.d.ts",
       "default": "./dist/shared/components/selection/checkbox/index.js"
