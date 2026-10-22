@@ -26,3 +26,10 @@ export {
 export { Su3Divider, type DividerOrientation } from './components/containment/divider/divider.ts';
 export { Su3Card, type CardVariant } from './components/containment/card/card.ts';
 export { Su3Badge, type BadgeTone } from './components/feedback/badge/badge.ts';
+export {
+  Su3Segment,
+  type SegmentPosition,
+  type SegmentSelectionMode,
+  type SegmentSize,
+} from './components/buttons/segment/segment.ts';
+export { Su3SegmentedButton } from './components/buttons/segmented-button/segmented-button.ts';
