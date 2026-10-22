@@ -107,6 +107,10 @@
       "types": "./dist/shared/components/inputs/text-field/index.d.ts",
       "default": "./dist/shared/components/inputs/text-field/index.js"
     },
+    "./tooltip.js": {
+      "types": "./dist/shared/components/feedback/tooltip/index.d.ts",
+      "default": "./dist/shared/components/feedback/tooltip/index.js"
+    },
     "./acme": {
       "types": "./dist/products/acme/index.d.ts",
       "default": "./dist/products/acme/index.js"
