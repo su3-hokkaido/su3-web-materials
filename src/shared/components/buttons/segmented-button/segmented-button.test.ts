@@ -136,6 +136,39 @@ describe('single selection: interaction', () => {
     expect(group.value).toBe('month');
   });
 
+  it('swaps the horizontal arrows in a right-to-left row', async () => {
+    const group = await render(single);
+    group.dir = 'rtl';
+    await userEvent.tab();
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(group.value).toBe('month');
+    await userEvent.keyboard('{ArrowRight}');
+    expect(group.value).toBe('week');
+  });
+
+  it('moves the tab stop when the selected segment is disabled later', async () => {
+    const group = await render(single);
+    const [day, week] = segments(group);
+    if (!day || !week) throw new Error('Missing segments');
+    week.disabled = true;
+    await week.updateComplete;
+    await group.updateComplete;
+    expect(segments(group).map((segment) => segment.tabbable)).toEqual([true, false, false]);
+    await userEvent.tab();
+    expect(document.activeElement).toBe(day);
+  });
+
+  it('follows a selected property set directly on a segment', async () => {
+    const group = await render(single);
+    const [day, week] = segments(group);
+    if (!day || !week) throw new Error('Missing segments');
+    day.selected = true;
+    week.selected = false;
+    await day.updateComplete;
+    await group.updateComplete;
+    expect(segments(group).map((segment) => segment.tabbable)).toEqual([true, false, false]);
+  });
+
   it('jumps with Home and End and ignores other keys', async () => {
     const group = await render(single);
     await userEvent.tab();
@@ -239,8 +272,9 @@ describe('multiple selection', () => {
 describe('inside a form', () => {
   async function renderForm(markup: string) {
     document.body.innerHTML = `<form>${markup}</form>`;
-    const form = document.querySelector('form') as HTMLFormElement;
-    const group = document.querySelector('su3-segmented-button') as Su3SegmentedButton;
+    const form = document.querySelector('form');
+    const group = document.querySelector('su3-segmented-button');
+    if (!form || !group) throw new Error('The form markup was not rendered');
     await group.updateComplete;
     await settle();
     await group.updateComplete;
@@ -372,8 +406,11 @@ describe('appearance (built-in light values)', () => {
     expect(getComputedStyle(control(week)).backgroundColor).toBe('rgb(200, 244, 255)');
     expect(getComputedStyle(control(day)).backgroundColor).toBe('rgba(0, 0, 0, 0)');
     expect(getComputedStyle(control(day)).borderTopColor).toBe('rgb(128, 135, 140)');
-    const check = (segment: Su3Segment) =>
-      getComputedStyle(segment.shadowRoot?.querySelector('.check') as Element).display;
+    const check = (segment: Su3Segment): string => {
+      const element = segment.shadowRoot?.querySelector('.check');
+      if (!element) throw new Error('No check mark was rendered');
+      return getComputedStyle(element).display;
+    };
     expect(check(week)).not.toBe('none');
     expect(check(day)).toBe('none');
   });
