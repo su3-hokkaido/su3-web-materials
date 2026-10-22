@@ -47,6 +47,10 @@
       "types": "./dist/shared/all.d.ts",
       "default": "./dist/shared/all.js"
     },
+    "./badge.js": {
+      "types": "./dist/shared/components/feedback/badge/index.d.ts",
+      "default": "./dist/shared/components/feedback/badge/index.js"
+    },
     "./button.js": {
       "types": "./dist/shared/components/buttons/button/index.d.ts",
       "default": "./dist/shared/components/buttons/button/index.js"

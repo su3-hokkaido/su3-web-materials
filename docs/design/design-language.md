@@ -109,6 +109,7 @@ Buttons use `md`; a product may switch them to `pill` by overriding
   pointers (`@media (pointer: coarse)`), extended with padding or a pseudo-element rather than by
   changing the visible size.
 - Icon size 20px inside `md` controls (16px in `sm`, 24px in `lg`).
+- Badges are 20px high pills (an 8px dot without text), with `label-sm` type.
 - Cards use `md` corners, 16px padding and a 12px gap between areas; media is full-bleed.
 - Checkbox box 20px (`--su3-sys-size-checkbox`); switch track 44x24px and thumb 16px
   (`--su3-sys-size-switch-track-width`, `-track-height`, `-thumb`). Icon buttons are square at the
