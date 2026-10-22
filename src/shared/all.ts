@@ -10,3 +10,5 @@ import './components/containment/card/index.ts';
 import './components/feedback/badge/index.ts';
 import './components/buttons/segment/index.ts';
 import './components/buttons/segmented-button/index.ts';
+import './components/navigation/navigation-item/index.ts';
+import './components/navigation/navigation-bar/index.ts';

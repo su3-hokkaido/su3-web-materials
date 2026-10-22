@@ -542,7 +542,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
 8. **README / README_JA / CLAUDE.md / catalog pages** (done, §17); the first manual npm publish is
    the owner's step, documented in the README.
 9. **After the MVP** (one task each, in priority order): Card (done, §17), Badge (done, §17), Segmented button (done, §17), Navigation
-   bar / drawer, Snackbar, Tooltip, Top app bar, Select, Dialog, Menu, then pickers and Data table.
+   bar (done, §17; drawer and rail remain), Snackbar, Tooltip, Top app bar, Select, Dialog, Menu, then pickers and Data table.
 
 ## 15. Acceptance Criteria
 
@@ -828,3 +828,12 @@ and explain the reasoning in the PR description.
     sys tokens. `segmented-button.js` registers both elements.
   - Decisions: selection lives on the segments and the group derives `value` / `values`; a
     single-select group never deselects; the group handles click and keydown once.
+- **Navigation bar completed (2026-10-22)**: `su3-navigation-bar` and `su3-navigation-item`, the first
+  components of the new `navigation` category. Details: `docs/2026-10-22_04_navigation-bar/`.
+  - Delivered: `src/shared/components/navigation/navigation-bar/` and `.../navigation-item/` with a
+    `<nav>` landmark, items rendered as links (`href`) or buttons, `aria-current="page"` on the
+    selected item, a pill indicator, an `icon` slot and a `badge` slot, single selection with
+    `value` and `change`, and the hooks `--su3-comp-navigation-bar-*`; no new sys tokens. Rail and
+    drawer remain later tasks.
+  - Decisions: plain tab order (no roving tabindex); the application owns routing; the bar never
+    deselects.

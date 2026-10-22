@@ -111,6 +111,8 @@ Buttons use `md`; a product may switch them to `pill` by overriding
 - Icon size 20px inside `md` controls (16px in `sm`, 24px in `lg`).
 - Segmented buttons use the control heights (32, 40 and 48px), `md` outer corners and one shared
   border line between segments; the selected segment is tinted and shows a check mark.
+- Navigation bar items are equal-width columns with a 64x32px pill indicator behind a 24px icon and a
+  `label-sm` label; the selected item is marked by the tinted pill and `aria-current`.
 - Badges are 20px high pills (an 8px dot without text), with `label-sm` type.
 - Cards use `md` corners, 16px padding and a 12px gap between areas; media is full-bleed.
 - Checkbox box 20px (`--su3-sys-size-checkbox`); switch track 44x24px and thumb 16px
