@@ -31,8 +31,8 @@ mode. It depends on `docs/2026-10-22_06_navigation-rail/` being merged.
 4. Section headings: no new component. The drawer styles slotted `h2`, `h3` and `h4` elements as
    section headings (`::slotted(:is(h2, h3, h4))`) and leaves them out of selection, because only
    `su3-navigation-item` children take part in it. Recorded as a judgment call.
-5. Hooks `--su3-comp-navigation-drawer-*` (container color, width, scrim color, shape of the modal
-   edge, heading color); scrim uses the existing `overlay` color role; enter and exit use motion
+5. Hooks `--su3-comp-navigation-drawer-*` (container color, border color, width, scrim color, shape of
+   the modal edge, elevation, heading color); scrim uses the existing `overlay` color role; enter and exit use motion
    tokens and are removed under reduced motion; forced colors get a border.
 
 ## Affected files and directories

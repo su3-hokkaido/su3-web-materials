@@ -9,6 +9,7 @@ export {
   FormAssociatedElement,
   FormCheckableElement,
   FormSubmitterElement,
+  NavigationSelectionElement,
   type FormSubmitterType,
 } from './behaviors/index.ts';
 export { Su3Checkbox } from './components/selection/checkbox/checkbox.ts';
@@ -33,8 +34,17 @@ export {
   type SegmentSize,
 } from './components/buttons/segment/segment.ts';
 export { Su3SegmentedButton } from './components/buttons/segmented-button/segmented-button.ts';
-export { Su3NavigationItem } from './components/navigation/navigation-item/navigation-item.ts';
+export {
+  Su3NavigationItem,
+  type NavigationItemLayout,
+} from './components/navigation/navigation-item/navigation-item.ts';
 export { Su3NavigationBar } from './components/navigation/navigation-bar/navigation-bar.ts';
+export { Su3NavigationRail } from './components/navigation/navigation-rail/navigation-rail.ts';
+export {
+  Su3NavigationDrawer,
+  type NavigationDrawerCloseDetail,
+  type NavigationDrawerCloseReason,
+} from './components/navigation/navigation-drawer/navigation-drawer.ts';
 export {
   Su3Snackbar,
   type SnackbarCloseDetail,
