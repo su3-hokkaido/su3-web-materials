@@ -24,3 +24,4 @@ export {
   type IconButtonVariant,
 } from './components/buttons/icon-button/icon-button.ts';
 export { Su3Divider, type DividerOrientation } from './components/containment/divider/divider.ts';
+export { Su3Card, type CardVariant } from './components/containment/card/card.ts';
