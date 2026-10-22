@@ -50,3 +50,4 @@ export {
   type SnackbarCloseDetail,
   type SnackbarCloseReason,
 } from './components/feedback/snackbar/snackbar.ts';
+export { Su3Tooltip, type TooltipPlacement } from './components/feedback/tooltip/tooltip.ts';

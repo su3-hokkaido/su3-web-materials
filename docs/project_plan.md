@@ -542,7 +542,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
 8. **README / README_JA / CLAUDE.md / catalog pages** (done, §17); the first manual npm publish is
    the owner's step, documented in the README.
 9. **After the MVP** (one task each, in priority order): Card (done, §17), Badge (done, §17), Segmented button (done, §17), Navigation
-   bar (done, §17), Snackbar (done, §17), Navigation rail (done, §17), Navigation drawer (done, §17), Tooltip, Top app bar, Select, Dialog, Menu, then pickers and Data table.
+   bar (done, §17), Snackbar (done, §17), Navigation rail (done, §17), Navigation drawer (done, §17), Tooltip (done, §17), Top app bar, Select, Dialog, Menu, then pickers and Data table.
 
 ## 15. Acceptance Criteria
 
@@ -870,3 +870,15 @@ and explain the reasoning in the PR description.
     enter and exit transitions (`@starting-style`, `allow-discrete`) that reduced motion removes;
     `change` fires before `close` on a selection; headings are plain slotted elements, not a
     component; the item's `layout` property replaces a separate drawer item.
+- **Tooltip completed (2026-10-22)**: `su3-tooltip`, in the `feedback` category. Details:
+  `docs/2026-10-22_08_tooltip/`. The remaining item 9 components follow in the order tooltip, top
+  app bar, dialog, menu, select, date picker, time picker, data table.
+  - Delivered: `src/shared/components/feedback/tooltip/` wrapping one trigger and a `content` slot
+    element, shown on hover after `delay` (default 500 ms) and on keyboard focus, hidden on leave,
+    blur, Escape and a press, and kept open while the pointer is over it; `placement` (`top`,
+    `bottom`, `start`, `end`) with flip and viewport clamping, `open` and `disabled`, the Popover API
+    for the top layer, `role="tooltip"`, and the hooks `--su3-comp-tooltip-*`; no new sys tokens.
+  - Decisions: the description is a light DOM element so `aria-describedby` can reach the trigger,
+    which does not reach the inner control of a shadow-based trigger (the tooltip is supplementary
+    text); placement is measured in JavaScript instead of CSS anchor positioning; no delay shared
+    between tooltips; touch does not open it.
