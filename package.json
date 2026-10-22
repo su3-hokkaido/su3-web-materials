@@ -71,6 +71,14 @@
       "types": "./dist/shared/components/buttons/icon-button/index.d.ts",
       "default": "./dist/shared/components/buttons/icon-button/index.js"
     },
+    "./segment.js": {
+      "types": "./dist/shared/components/buttons/segment/index.d.ts",
+      "default": "./dist/shared/components/buttons/segment/index.js"
+    },
+    "./segmented-button.js": {
+      "types": "./dist/shared/components/buttons/segmented-button/index.d.ts",
+      "default": "./dist/shared/components/buttons/segmented-button/index.js"
+    },
     "./switch.js": {
       "types": "./dist/shared/components/selection/switch/index.d.ts",
       "default": "./dist/shared/components/selection/switch/index.js"
