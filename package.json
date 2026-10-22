@@ -87,6 +87,10 @@
       "types": "./dist/shared/components/buttons/segmented-button/index.d.ts",
       "default": "./dist/shared/components/buttons/segmented-button/index.js"
     },
+    "./snackbar.js": {
+      "types": "./dist/shared/components/feedback/snackbar/index.d.ts",
+      "default": "./dist/shared/components/feedback/snackbar/index.js"
+    },
     "./switch.js": {
       "types": "./dist/shared/components/selection/switch/index.d.ts",
       "default": "./dist/shared/components/selection/switch/index.js"
