@@ -542,7 +542,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
 8. **README / README_JA / CLAUDE.md / catalog pages** (done, §17); the first manual npm publish is
    the owner's step, documented in the README.
 9. **After the MVP** (one task each, in priority order): Card (done, §17), Badge (done, §17), Segmented button (done, §17), Navigation
-   bar (done, §17), Snackbar (done, §17), Navigation rail (done, §17), Navigation drawer (done, §17), Tooltip (done, §17), Top app bar, Select, Dialog, Menu, then pickers and Data table.
+   bar (done, §17), Snackbar (done, §17), Navigation rail (done, §17), Navigation drawer (done, §17), Tooltip (done, §17), Top app bar (done, §17), Dialog (done, §17), Select, Menu, then pickers and Data table.
 
 ## 15. Acceptance Criteria
 
@@ -882,3 +882,22 @@ and explain the reasoning in the PR description.
     which does not reach the inner control of a shadow-based trigger (the tooltip is supplementary
     text); placement is measured in JavaScript instead of CSS anchor positioning; no delay shared
     between tooltips; touch does not open it.
+- **Top app bar completed (2026-10-22)**: `su3-top-app-bar`, in the `navigation` category. Details:
+  `docs/2026-10-22_09_top-app-bar/`.
+  - Delivered: `src/shared/components/navigation/top-app-bar/` with `navigation`, default (title)
+    and `actions` slots, the `small`, `center` and `large` variants, `sticky`, `elevate-on-scroll`
+    with the public reflected `scrolled`, a banner `<header>`, and the hooks
+    `--su3-comp-top-app-bar-*`; no new sys tokens.
+  - Decisions: the title is slotted content (text or the application's `h1`), not a wrapped
+    heading; the large title does not collapse; only the window scroll is observed.
+- **Dialog completed (2026-10-22)**: `su3-dialog`, in the `feedback` category. Details:
+  `docs/2026-10-22_10_dialog/`.
+  - Delivered: `src/shared/components/feedback/dialog/` on a native `<dialog>` (top layer, scrim,
+    focus trap, Escape, focus return) with `headline`, default and `actions` slots, `open`,
+    `persistent`, `alert` (`alertdialog`) and `fullscreen`, a `close` event with `detail.reason`
+    (`escape`, `scrim`, `action`) and `detail.action`, scrolling content, and the hooks
+    `--su3-comp-dialog-*`; no new sys tokens.
+  - Decisions: any non-disabled element with a `dialog-action` attribute in the `actions` slot
+    closes the dialog and names the action; the headline names the dialog through an `h2` in the
+    shadow root, `aria-label` otherwise; the regions are always rendered so slotted controls are
+    focusable from the first frame; no scroll lock.

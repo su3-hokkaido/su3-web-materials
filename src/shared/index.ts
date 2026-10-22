@@ -51,3 +51,12 @@ export {
   type SnackbarCloseReason,
 } from './components/feedback/snackbar/snackbar.ts';
 export { Su3Tooltip, type TooltipPlacement } from './components/feedback/tooltip/tooltip.ts';
+export {
+  Su3Dialog,
+  type DialogCloseDetail,
+  type DialogCloseReason,
+} from './components/feedback/dialog/dialog.ts';
+export {
+  Su3TopAppBar,
+  type TopAppBarVariant,
+} from './components/navigation/top-app-bar/top-app-bar.ts';

@@ -63,6 +63,10 @@
       "types": "./dist/shared/components/selection/checkbox/index.d.ts",
       "default": "./dist/shared/components/selection/checkbox/index.js"
     },
+    "./dialog.js": {
+      "types": "./dist/shared/components/feedback/dialog/index.d.ts",
+      "default": "./dist/shared/components/feedback/dialog/index.js"
+    },
     "./divider.js": {
       "types": "./dist/shared/components/containment/divider/index.d.ts",
       "default": "./dist/shared/components/containment/divider/index.js"
@@ -110,6 +114,10 @@
     "./tooltip.js": {
       "types": "./dist/shared/components/feedback/tooltip/index.d.ts",
       "default": "./dist/shared/components/feedback/tooltip/index.js"
+    },
+    "./top-app-bar.js": {
+      "types": "./dist/shared/components/navigation/top-app-bar/index.d.ts",
+      "default": "./dist/shared/components/navigation/top-app-bar/index.js"
     },
     "./acme": {
       "types": "./dist/products/acme/index.d.ts",
