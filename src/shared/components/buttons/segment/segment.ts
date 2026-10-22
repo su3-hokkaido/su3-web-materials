@@ -1,4 +1,11 @@
-import { html, LitElement, nothing, type PropertyDeclarations, type TemplateResult } from 'lit';
+import {
+  html,
+  LitElement,
+  nothing,
+  type PropertyDeclarations,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
 import { segmentStyles } from './segment.styles.ts';
 
 /** Where the segment sits in its group; the group sets it to round the outer corners only. */
@@ -22,6 +29,9 @@ export type SegmentSelectionMode = 'single' | 'multiple';
  * @summary One selectable option of a segmented button.
  *
  * @slot - The label.
+ *
+ * @fires su3-segment-change - `selected` or `disabled` changed, for any reason. The group listens to
+ * it to keep the roving tab stop and the form value current. Internal: it does not leave the group.
  *
  * @csspart control - The inner button.
  * @csspart label - The wrapper around the default slot.
@@ -103,6 +113,12 @@ export class Su3Segment extends LitElement {
   /** Whether the segment ignores the user: disabled itself or through its group. */
   get isDisabled(): boolean {
     return this.disabled || this.groupDisabled;
+  }
+
+  protected override updated(changed: PropertyValues): void {
+    if (changed.has('selected') || changed.has('disabled')) {
+      this.dispatchEvent(new Event('su3-segment-change', { bubbles: true }));
+    }
   }
 
   protected override render(): TemplateResult {
