@@ -541,7 +541,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
    IconButton, Checkbox, Switch, TextField, Divider.
 8. **README / README_JA / CLAUDE.md / catalog pages** (done, §17); the first manual npm publish is
    the owner's step, documented in the README.
-9. **After the MVP** (one task each, in priority order): Card (done, §17), Badge, Segmented button, Navigation
+9. **After the MVP** (one task each, in priority order): Card (done, §17), Badge (done, §17), Segmented button, Navigation
    bar / drawer, Snackbar, Tooltip, Top app bar, Select, Dialog, Menu, then pickers and Data table.
 
 ## 15. Acceptance Criteria
@@ -807,3 +807,14 @@ and explain the reasoning in the PR description.
     that a re-themed card needs a text-color hook, which was added); new VRT baselines reviewed.
   - Decisions: the card is a static container (no role, no focus, no click handling); an interactive
     card is a later task.
+- **Badge completed (2026-10-22)**: `su3-badge`, the first component of the new `feedback` category.
+  Details: `docs/2026-10-22_02_badge/`.
+  - Delivered: `src/shared/components/feedback/badge/` with the tones `accent`, `subtle`, `danger`
+    and `neutral`, slotted text, a numeric `count` with `max` (a truncated count is exposed as an
+    image named with the full number), a `dot` (an image named by `aria-label`), and the hooks
+    `--su3-comp-badge-*`; no new sys tokens.
+  - Verified: 13 browser tests; axe reports 0 violations in 49 stories x 2 themes; new VRT baselines
+    reviewed (the review found a neutral dot that was nearly invisible on the page, so it is
+    filled with `text-muted`); `check:package` and `check:consumers` pass.
+  - Notes: a first `make vrt-update` run died when Docker Desktop stopped; the rerun after
+    restarting it completed.
