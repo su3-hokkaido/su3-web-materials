@@ -50,3 +50,19 @@ export const Selected: Story = { args: { selected: true } };
 export const Disabled: Story = { args: { disabled: true } };
 
 export const Link: Story = { args: { href: '#home' } };
+
+/** The inline layout used by `su3-navigation-drawer`: the label beside the icon. */
+export const Inline: Story = {
+  args: { selected: true },
+  render: ({ label, selected, disabled, href }) =>
+    html`<div style="width: 240px">
+      <su3-navigation-item
+        value="home"
+        layout="inline"
+        href=${href}
+        ?selected=${selected}
+        ?disabled=${disabled}
+        >${homeIcon}${label}</su3-navigation-item
+      >
+    </div>`,
+};

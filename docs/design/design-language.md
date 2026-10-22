@@ -113,6 +113,12 @@ Buttons use `md`; a product may switch them to `pill` by overriding
   border line between segments; the selected segment is tinted and shows a check mark.
 - Navigation bar items are equal-width columns with a 64x32px pill indicator behind a 24px icon and a
   `label-sm` label; the selected item is marked by the tinted pill and `aria-current`.
+- The navigation rail is 80px wide (the pill plus 8px on each side), stacks the same items with a
+  12px gap and draws one border line on its inline-end edge.
+- The navigation drawer is 288px wide with 12px padding. Its items use the inline layout: a 48px high
+  pill over the whole row, 16px side padding, 12px between icon and label. A modal drawer uses
+  `elevation-3`, `lg` corners on its outer edge and the `overlay` color as the scrim; section
+  headings use `label-sm` in the muted text color.
 - Badges are 20px high pills (an 8px dot without text), with `label-sm` type.
 - Snackbars use the inverse of the page (`text` as the container, `surface` as the label), `sm`
   corners and `elevation-3`, sit 16px above the bottom edge and are at most 576px wide.

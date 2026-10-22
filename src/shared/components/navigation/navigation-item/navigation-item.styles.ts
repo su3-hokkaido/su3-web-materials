@@ -130,9 +130,67 @@ export const navigationItemStyles = css`
     color: inherit;
   }
 
+  /*
+   * Inline layout (drawer): the label sits beside the icon and the pill, with its state layer, is
+   * the whole control. The indicator wrapper only keeps the icon and the badge together.
+   */
+  :host([layout='inline']) .control {
+    flex-direction: row;
+    gap: ${sysVar('space-3')};
+    min-block-size: ${sysVar('size-control-lg')};
+    padding-block: 0;
+    padding-inline: ${sysVar('space-4')};
+    border-radius: ${compVar('navigation-bar-indicator-shape', sysVar('shape-pill'))};
+    background-color: var(--_indicator);
+    font-size: ${sysVar('type-label-size')};
+    line-height: ${sysVar('type-label-line-height')};
+    text-align: start;
+    transition: background-color ${sysVar('motion-duration-fast')}
+      ${sysVar('motion-easing-standard')};
+  }
+
+  :host([layout='inline']) .control::before {
+    ${stateLayerBox()}
+  }
+
+  :host([layout='inline']) .indicator {
+    display: contents;
+    background-color: transparent;
+  }
+
+  :host([layout='inline']) .indicator::before {
+    display: none;
+  }
+
+  :host([layout='inline']) .label {
+    flex: 1;
+    text-align: start;
+  }
+
+  :host([layout='inline']) .badge {
+    inset-inline: auto ${sysVar('space-4')};
+    inset-block-start: 50%;
+    margin-inline-start: 0;
+    transform: translateY(-50%);
+  }
+
+  :host([layout='inline']) .control:hover:not(:disabled, [aria-disabled='true'])::before {
+    ${stateLayerOpacity.hover}
+  }
+
+  :host([layout='inline']) .control:focus-visible:not(:disabled, [aria-disabled='true'])::before {
+    ${stateLayerOpacity.focus}
+  }
+
+  :host([layout='inline']) .control:active:not(:disabled, [aria-disabled='true'])::before {
+    ${stateLayerOpacity.pressed}
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .indicator,
-    .indicator::before {
+    .indicator::before,
+    :host([layout='inline']) .control,
+    :host([layout='inline']) .control::before {
       transition: none;
     }
   }
@@ -144,6 +202,14 @@ export const navigationItemStyles = css`
     }
 
     :host([selected]) .indicator {
+      border: ${sysVar('size-focus-ring-width')} solid Highlight;
+    }
+
+    :host([selected][layout='inline']) .indicator {
+      border: 0;
+    }
+
+    :host([selected][layout='inline']) .control {
       border: ${sysVar('size-focus-ring-width')} solid Highlight;
     }
 

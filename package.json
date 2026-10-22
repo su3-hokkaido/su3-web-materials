@@ -75,9 +75,17 @@
       "types": "./dist/shared/components/navigation/navigation-bar/index.d.ts",
       "default": "./dist/shared/components/navigation/navigation-bar/index.js"
     },
+    "./navigation-drawer.js": {
+      "types": "./dist/shared/components/navigation/navigation-drawer/index.d.ts",
+      "default": "./dist/shared/components/navigation/navigation-drawer/index.js"
+    },
     "./navigation-item.js": {
       "types": "./dist/shared/components/navigation/navigation-item/index.d.ts",
       "default": "./dist/shared/components/navigation/navigation-item/index.js"
+    },
+    "./navigation-rail.js": {
+      "types": "./dist/shared/components/navigation/navigation-rail/index.d.ts",
+      "default": "./dist/shared/components/navigation/navigation-rail/index.js"
     },
     "./segment.js": {
       "types": "./dist/shared/components/buttons/segment/index.d.ts",
