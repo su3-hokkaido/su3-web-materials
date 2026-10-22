@@ -79,4 +79,31 @@ describe('su3-navigation-item', () => {
     );
     expect(document.querySelector('su3-badge')?.assignedSlot?.name).toBe('badge');
   });
+
+  it('defaults to the stacked layout and reflects layout', async () => {
+    const item = await render(`<su3-navigation-item>${icon}Home</su3-navigation-item>`);
+    expect(item.layout).toBe('stacked');
+    expect(item.hasAttribute('layout')).toBe(true);
+    const control = item.shadowRoot?.querySelector('[part="control"]');
+    if (!control) throw new Error('No control');
+    expect(getComputedStyle(control).flexDirection).toBe('column');
+  });
+
+  it('puts the label beside the icon in the inline layout, with the pill on the whole row', async () => {
+    const item = await render(
+      `<su3-navigation-item layout="inline" selected>${icon}Home</su3-navigation-item>`,
+    );
+    const control = item.shadowRoot?.querySelector('[part="control"]');
+    const pill = item.shadowRoot?.querySelector('[part="indicator"]');
+    if (!control || !pill) throw new Error('No control');
+    await Promise.all(control.getAnimations().map((animation) => animation.finished));
+    expect(getComputedStyle(control).flexDirection).toBe('row');
+    expect(getComputedStyle(control).backgroundColor).toBe('rgb(200, 244, 255)');
+    expect(getComputedStyle(pill).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+    const svg = item.querySelector('svg')?.getBoundingClientRect();
+    const label = item.shadowRoot?.querySelector('[part="label"]')?.getBoundingClientRect();
+    if (!svg || !label) throw new Error('No boxes');
+    expect(label.left).toBeGreaterThan(svg.right - 1);
+    expect(Math.abs(label.top + label.height / 2 - (svg.top + svg.height / 2))).toBeLessThan(3);
+  });
 });
