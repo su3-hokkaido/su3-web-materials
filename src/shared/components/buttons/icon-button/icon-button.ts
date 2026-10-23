@@ -85,6 +85,8 @@ export class Su3IconButton extends FormSubmitterElement {
       ?disabled=${this.isDisabled}
       aria-pressed=${this.toggle ? String(this.selected) : nothing}
       aria-label=${this.accessibleName ?? nothing}
+      aria-haspopup=${this.accessibleHasPopup ?? nothing}
+      aria-expanded=${this.accessibleExpanded ?? nothing}
       @click=${this.#onControlClick}
     >
       <slot></slot>

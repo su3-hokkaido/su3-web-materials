@@ -121,6 +121,30 @@ describe('rendering', () => {
   });
 });
 
+describe('popup state', () => {
+  it('forwards aria-haspopup and aria-expanded to the inner button and follows changes', async () => {
+    const host = await render(
+      '<su3-button aria-haspopup="menu" aria-expanded="false">Options</su3-button>',
+    );
+    const button = page.getByRole('button', { name: 'Options' });
+    await expect.element(button).toHaveAttribute('aria-haspopup', 'menu');
+    await expect.element(button).toHaveAttribute('aria-expanded', 'false');
+    host.setAttribute('aria-expanded', 'true');
+    await host.updateComplete;
+    await expect.element(button).toHaveAttribute('aria-expanded', 'true');
+    host.removeAttribute('aria-expanded');
+    await host.updateComplete;
+    await expect.element(button).not.toHaveAttribute('aria-expanded');
+  });
+
+  it('forwards them to the link of a link button', async () => {
+    await render('<su3-button href="#x" aria-haspopup="true">More</su3-button>');
+    await expect
+      .element(page.getByRole('link', { name: 'More' }))
+      .toHaveAttribute('aria-haspopup', 'true');
+  });
+});
+
 describe('icon-only', () => {
   const iconOnly =
     '<su3-button aria-label="Add"><svg slot="leading" width="20" height="20" aria-hidden="true"></svg></su3-button>';

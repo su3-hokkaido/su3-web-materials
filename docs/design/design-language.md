@@ -125,6 +125,10 @@ Buttons use `md`; a product may switch them to `pill` by overriding
 - Dialogs use the raised surface with `lg` corners and `elevation-3`, 24px padding, a `title`-type
   headline and `body`-type content, are at most 480px wide and leave 24px to the viewport edge; the
   actions sit at the end, 8px apart, 24px below the content; the scrim is the `overlay` color.
+- Menus use the raised surface with `md` corners, `elevation-2` and the elevation edge, 8px of
+  padding above and below the items and a 192px minimum width, 4px from their trigger. Items are
+  48px high with 16px side padding and 12px between icon, label and trailing text; hover, focus and
+  pressed use the state layer.
 - Tooltips use the inverse of the page like snackbars, `sm` corners, `elevation-2`, `label-sm` type,
   8px of space around the text and are at most 240px wide, 8px from their trigger. A tooltip is
   supplementary: its description reaches the trigger through `aria-describedby`, which does not cross
