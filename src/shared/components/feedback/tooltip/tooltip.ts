@@ -242,9 +242,17 @@ export class Su3Tooltip extends LitElement {
 
   #watching = false;
 
+  // The trigger can still be rendering or laying out when the tooltip opens (a shadow-based control
+  // upgrades late), so the placement follows size changes of the host and of the surface.
+  #observer: ResizeObserver | undefined;
+
   #watch(): void {
     if (this.#watching) return;
     this.#watching = true;
+    this.#observer ??= new ResizeObserver(this.#onViewportChange);
+    this.#observer.observe(this);
+    const surface = this.#surface();
+    if (surface) this.#observer.observe(surface);
     document.addEventListener('keydown', this.#onKeyDown);
     window.addEventListener('resize', this.#onViewportChange);
     window.addEventListener('scroll', this.#onViewportChange, true);
@@ -258,6 +266,7 @@ export class Su3Tooltip extends LitElement {
     cancelAnimationFrame(this.#frame);
     this.#frame = 0;
     window.removeEventListener('scroll', this.#onViewportChange, true);
+    this.#observer?.disconnect();
   }
 
   /** The preferred physical side, with `start` and `end` resolved through the text direction. */

@@ -249,6 +249,16 @@ describe('placement', () => {
     expect(far.tip.right).toBeLessThanOrEqual(document.documentElement.clientWidth);
   });
 
+  it('follows the trigger when it changes size after the tooltip opened', async () => {
+    const tooltip = await render(open(''));
+    const button = tooltip.querySelector('button');
+    if (!button) throw new Error('No trigger');
+    button.style.width = '200px';
+    await wait(100);
+    const { trigger, tip } = boxes(tooltip);
+    expect(Math.abs(tip.left + tip.width / 2 - (trigger.left + trigger.width / 2))).toBeLessThan(2);
+  });
+
   it('follows the offset hook', async () => {
     const { trigger, tip } = boxes(
       await render(open('', 'margin: 200px 150px; --su3-comp-tooltip-offset: 20px')),
