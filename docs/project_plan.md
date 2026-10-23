@@ -542,7 +542,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
 8. **README / README_JA / CLAUDE.md / catalog pages** (done, §17); the first manual npm publish is
    the owner's step, documented in the README.
 9. **After the MVP** (one task each, in priority order): Card (done, §17), Badge (done, §17), Segmented button (done, §17), Navigation
-   bar (done, §17), Snackbar (done, §17), Navigation rail (done, §17), Navigation drawer (done, §17), Tooltip (done, §17), Top app bar (done, §17), Dialog (done, §17), Select, Menu, then pickers and Data table.
+   bar (done, §17), Snackbar (done, §17), Navigation rail (done, §17), Navigation drawer (done, §17), Tooltip (done, §17), Top app bar (done, §17), Dialog (done, §17), Menu (done, §17), Select, then pickers and Data table.
 
 ## 15. Acceptance Criteria
 
@@ -901,3 +901,17 @@ and explain the reasoning in the PR description.
     closes the dialog and names the action; the headline names the dialog through an `h2` in the
     shadow root, `aria-label` otherwise; the regions are always rendered so slotted controls are
     focusable from the first frame; no scroll lock.
+- **Menu completed (2026-10-23)**: `su3-menu` and `su3-menu-item`, in the `navigation` category.
+  Details: `docs/2026-10-23_01_menu/`.
+  - Delivered: `src/shared/components/navigation/menu/` and `.../menu-item/`: a popover in the top
+    layer opened from a `trigger` slot, placed `bottom-start`, `bottom-end`, `top-start` or
+    `top-end` with flip and viewport clamping, `role="menu"` with `menuitem` and
+    `menuitemcheckbox` (`checkable`, `checked`) items, roving focus, arrow keys with wrap, Home and
+    End, typeahead, Enter, Space, Escape and Tab, outside-press closing, a `select` event
+    (`detail.item`, `detail.value`) and a `close` event (`detail.reason`: `select`, `escape`,
+    `outside`, `tab`, `trigger`), and the hooks `--su3-comp-menu-*`; no new sys tokens.
+    `su3-button` and `su3-icon-button` forward `aria-haspopup` and `aria-expanded` to their inner
+    control (in `FormSubmitterElement`).
+  - Decisions: the item is the focus target and carries its role as host attributes (not
+    `ElementInternals`, which tools such as Playwright do not see); no submenus and no link items;
+    placement code is private to the menu instead of shared with the tooltip.

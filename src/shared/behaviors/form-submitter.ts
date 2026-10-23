@@ -22,11 +22,22 @@ export type FormSubmitterType = 'button' | 'submit' | 'reset';
  *   it, so a form with several fields needs another way to submit on Enter.
  * - The action depends on the `click` event reaching the host, so an ancestor that stops
  *   propagation in the capture phase also stops the submit.
+ *
+ * The host's `aria-haspopup` and `aria-expanded` are forwarded to the inner control, like
+ * `aria-label`, so a menu or other popup can describe its trigger.
  */
 export abstract class FormSubmitterElement extends FormAssociatedElement {
   static override properties: PropertyDeclarations = {
     type: { reflect: true },
+    accessibleHasPopup: { attribute: 'aria-haspopup' },
+    accessibleExpanded: { attribute: 'aria-expanded' },
   };
+
+  /** The host's `aria-haspopup`, forwarded to the inner control. */
+  declare accessibleHasPopup: string | null;
+
+  /** The host's `aria-expanded`, forwarded to the inner control. */
+  declare accessibleExpanded: string | null;
 
   /** What clicking does inside a form. Defaults to `submit`; an unknown value is treated as `submit`. */
   declare type: FormSubmitterType;
@@ -34,6 +45,8 @@ export abstract class FormSubmitterElement extends FormAssociatedElement {
   constructor() {
     super();
     this.type = 'submit';
+    this.accessibleHasPopup = null;
+    this.accessibleExpanded = null;
     this.addEventListener('click', this.#onClick);
   }
 

@@ -75,6 +75,14 @@
       "types": "./dist/shared/components/buttons/icon-button/index.d.ts",
       "default": "./dist/shared/components/buttons/icon-button/index.js"
     },
+    "./menu.js": {
+      "types": "./dist/shared/components/navigation/menu/index.d.ts",
+      "default": "./dist/shared/components/navigation/menu/index.js"
+    },
+    "./menu-item.js": {
+      "types": "./dist/shared/components/navigation/menu-item/index.d.ts",
+      "default": "./dist/shared/components/navigation/menu-item/index.js"
+    },
     "./navigation-bar.js": {
       "types": "./dist/shared/components/navigation/navigation-bar/index.d.ts",
       "default": "./dist/shared/components/navigation/navigation-bar/index.js"

@@ -18,3 +18,5 @@ import './components/feedback/snackbar/index.ts';
 import './components/feedback/tooltip/index.ts';
 import './components/navigation/top-app-bar/index.ts';
 import './components/feedback/dialog/index.ts';
+import './components/navigation/menu-item/index.ts';
+import './components/navigation/menu/index.ts';

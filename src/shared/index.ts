@@ -56,6 +56,14 @@ export {
   type DialogCloseDetail,
   type DialogCloseReason,
 } from './components/feedback/dialog/dialog.ts';
+export { Su3MenuItem } from './components/navigation/menu-item/menu-item.ts';
+export {
+  Su3Menu,
+  type MenuCloseDetail,
+  type MenuCloseReason,
+  type MenuPlacement,
+  type MenuSelectDetail,
+} from './components/navigation/menu/menu.ts';
 export {
   Su3TopAppBar,
   type TopAppBarVariant,
