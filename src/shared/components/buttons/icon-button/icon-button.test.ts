@@ -28,6 +28,18 @@ afterEach(() => {
 });
 
 describe('rendering and accessibility', () => {
+  it('forwards aria-haspopup and aria-expanded to the inner button', async () => {
+    const host = await render(
+      `<su3-icon-button aria-label="More" aria-haspopup="menu" aria-expanded="true">${ICON}</su3-icon-button>`,
+    );
+    const button = page.getByRole('button', { name: 'More' });
+    await expect.element(button).toHaveAttribute('aria-haspopup', 'menu');
+    await expect.element(button).toHaveAttribute('aria-expanded', 'true');
+    host.setAttribute('aria-expanded', 'false');
+    await host.updateComplete;
+    await expect.element(button).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('exposes a button named by aria-label and starts as a standard medium button', async () => {
     const host = await render(`<su3-icon-button aria-label="Favorite">${ICON}</su3-icon-button>`);
     await expect.element(page.getByRole('button', { name: 'Favorite' })).toBeVisible();

@@ -21,8 +21,8 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
  * button for Enter).
  *
  * Accessible name: use the label slot, or `aria-label` on the host for an icon-only button. The
- * host's `aria-label` is forwarded to the inner control; `aria-labelledby`, `<label for>` and other
- * ARIA attributes on the host are not forwarded.
+ * host's `aria-label`, `aria-haspopup` and `aria-expanded` are forwarded to the inner control;
+ * `aria-labelledby`, `<label for>` and other ARIA attributes on the host are not forwarded.
  *
  * @tagname su3-button
  * @summary A button that triggers an action, submits or resets a form, or navigates as a link.
@@ -140,6 +140,8 @@ export class Su3Button extends FormSubmitterElement {
         tabindex=${this.softDisabled && !this.isDisabled ? '0' : nothing}
         aria-disabled=${unavailable ? 'true' : nothing}
         aria-label=${this.accessibleName ?? nothing}
+        aria-haspopup=${this.accessibleHasPopup ?? nothing}
+        aria-expanded=${this.accessibleExpanded ?? nothing}
         @click=${this.#onControlClick}
         >${content}</a
       >`;
@@ -152,6 +154,8 @@ export class Su3Button extends FormSubmitterElement {
       ?disabled=${this.isDisabled}
       aria-disabled=${this.softDisabled && !this.isDisabled ? 'true' : nothing}
       aria-label=${this.accessibleName ?? nothing}
+      aria-haspopup=${this.accessibleHasPopup ?? nothing}
+      aria-expanded=${this.accessibleExpanded ?? nothing}
       @click=${this.#onControlClick}
     >
       ${content}
