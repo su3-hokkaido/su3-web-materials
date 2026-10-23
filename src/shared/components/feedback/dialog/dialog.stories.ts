@@ -59,6 +59,18 @@ export const Alert: Story = {
     persistent: true,
     alert: true,
   },
+  render: ({ headline, text, open, persistent, alert, fullscreen }) =>
+    html`<su3-dialog
+      ?open=${open}
+      ?persistent=${persistent}
+      ?alert=${alert}
+      ?fullscreen=${fullscreen}
+    >
+      <span slot="headline">${headline}</span>
+      <div>${text}</div>
+      <su3-button slot="actions" variant="text" dialog-action="cancel">Cancel</su3-button>
+      <su3-button slot="actions" variant="text" dialog-action="delete">Delete</su3-button>
+    </su3-dialog>`,
 };
 
 /** Long content scrolls inside the dialog while the headline and actions stay in place. */
