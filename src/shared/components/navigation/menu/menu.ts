@@ -1,4 +1,7 @@
 import { html, LitElement, nothing, type PropertyDeclarations, type TemplateResult } from 'lit';
+import type { PopupPlacement } from '../../../behaviors/popup-position.ts';
+import { PopupController } from '../../../behaviors/popup-controller.ts';
+import { Typeahead } from '../../../behaviors/typeahead.ts';
 import type { Su3MenuItem } from '../menu-item/menu-item.ts';
 import { menuStyles } from './menu.styles.ts';
 
@@ -21,9 +24,6 @@ export interface MenuCloseDetail {
   /** Why the menu closed. */
   reason: MenuCloseReason;
 }
-
-/** How long typed letters count as one search before the buffer is cleared. */
-const TYPEAHEAD_MS = 1000;
 
 /**
  * A popup list of commands that opens from a trigger. Put the control that opens it in the
@@ -80,11 +80,18 @@ export class Su3Menu extends LitElement {
 
   /** Which item takes focus when the menu opens. */
   #entry: 'first' | 'last' = 'first';
-  #typed = '';
-  #typedTimer: ReturnType<typeof setTimeout> | undefined;
-  #watching = false;
-  #observer: ResizeObserver | undefined;
-  #frame = 0;
+  readonly #typeahead = new Typeahead();
+  readonly #popup: PopupController = new PopupController(this, {
+    surface: (): HTMLElement | null => this.#surface(),
+    anchor: (): Element => this.#trigger() ?? this,
+    placement: (): PopupPlacement => {
+      const [side, align] = this.placement.split('-');
+      return { side: side === 'top' ? 'top' : 'bottom', align: align === 'end' ? 'end' : 'start' };
+    },
+    onOutsidePress: () => {
+      this.#close('outside');
+    },
+  });
 
   constructor() {
     super();
@@ -95,28 +102,14 @@ export class Su3Menu extends LitElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    this.#unwatch();
-    clearTimeout(this.#typedTimer);
+    this.#typeahead.clear();
     // Removing the element hides the popup, so the state follows it.
     this.open = false;
   }
 
   protected override updated(): void {
-    const surface = this.#surface();
-    if (!surface) return;
     this.#syncTrigger();
-    const shown = surface.matches(':popover-open');
-    if (this.open && !shown) {
-      surface.showPopover();
-      this.#place(surface);
-      this.#watch();
-      this.#focusEntry();
-    } else if (!this.open && shown) {
-      surface.hidePopover();
-      this.#unwatch();
-    } else if (this.open) {
-      this.#place(surface);
-    }
+    if (this.#popup.sync(this.open)) this.#focusEntry();
   }
 
   #surface(): HTMLElement | null {
@@ -248,94 +241,11 @@ export class Su3Menu extends LitElement {
         return;
       }
       default:
-        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
-          this.#typeahead(event.key, items, current);
+        if (Typeahead.isPrintable(event)) {
+          items[this.#typeahead.find(event.key, items.map(labelOf), current)]?.focus();
         }
     }
   };
-
-  /** Moves to the next item whose label starts with what was typed. */
-  #typeahead(key: string, items: Su3MenuItem[], current: number): void {
-    clearTimeout(this.#typedTimer);
-    this.#typedTimer = setTimeout(() => {
-      this.#typed = '';
-    }, TYPEAHEAD_MS);
-    this.#typed += key.toLowerCase();
-    // Typing the same letter again cycles through the items that start with it.
-    const cycling = /^(.)\1*$/u.test(this.#typed);
-    const search = cycling ? (this.#typed[0] ?? '') : this.#typed;
-    const start = cycling ? current + 1 : Math.max(current, 0);
-    for (let step = 0; step < items.length; step += 1) {
-      const item = items[(start + step) % items.length];
-      if (item && labelOf(item).startsWith(search)) {
-        item.focus();
-        return;
-      }
-    }
-  }
-
-  #onDocumentPointerDown = (event: PointerEvent): void => {
-    if (!event.composedPath().includes(this)) this.#close('outside');
-  };
-
-  #onViewportChange = (): void => {
-    if (this.#frame) return;
-    this.#frame = requestAnimationFrame(() => {
-      this.#frame = 0;
-      const surface = this.#surface();
-      if (surface && this.open) this.#place(surface);
-    });
-  };
-
-  #watch(): void {
-    if (this.#watching) return;
-    this.#watching = true;
-    document.addEventListener('pointerdown', this.#onDocumentPointerDown, true);
-    window.addEventListener('resize', this.#onViewportChange);
-    window.addEventListener('scroll', this.#onViewportChange, true);
-    // The trigger can still be laying out when the menu opens, so placement follows size changes.
-    this.#observer ??= new ResizeObserver(this.#onViewportChange);
-    this.#observer.observe(this);
-    const surface = this.#surface();
-    if (surface) this.#observer.observe(surface);
-  }
-
-  #unwatch(): void {
-    if (!this.#watching) return;
-    this.#watching = false;
-    document.removeEventListener('pointerdown', this.#onDocumentPointerDown, true);
-    window.removeEventListener('resize', this.#onViewportChange);
-    window.removeEventListener('scroll', this.#onViewportChange, true);
-    this.#observer?.disconnect();
-    cancelAnimationFrame(this.#frame);
-    this.#frame = 0;
-  }
-
-  /** Puts the popup below or above the trigger, aligned to its start or end, inside the viewport. */
-  #place(surface: HTMLElement): void {
-    const anchor = (this.#trigger() ?? this).getBoundingClientRect();
-    const tip = surface.getBoundingClientRect();
-    const gap = parseFloat(getComputedStyle(surface).marginTop) || 0;
-    const { clientWidth: width, clientHeight: height } = document.documentElement;
-    const rtl = getComputedStyle(this).direction === 'rtl';
-
-    const [side, align] = this.placement.split('-');
-    const alignLeft = (align === 'end') === rtl;
-    const x = alignLeft ? anchor.left : anchor.right - tip.width;
-
-    const below = anchor.bottom + gap;
-    const above = anchor.top - tip.height - gap;
-    const fits = (y: number): boolean => y >= 0 && y + tip.height <= height;
-    const preferred = side === 'top' ? above : below;
-    const opposite = side === 'top' ? below : above;
-    const y = fits(preferred) || !fits(opposite) ? preferred : opposite;
-
-    const clampedX = Math.min(Math.max(x, gap), Math.max(gap, width - tip.width - gap));
-    const clampedY = Math.min(Math.max(y, gap), Math.max(gap, height - tip.height - gap));
-    // The margin shifts a fixed box by the gap, so the coordinates are reduced by it.
-    surface.style.left = `${String(clampedX - gap)}px`;
-    surface.style.top = `${String(clampedY - gap)}px`;
-  }
 
   protected override render(): TemplateResult {
     return html`<slot
