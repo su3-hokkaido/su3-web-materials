@@ -63,6 +63,14 @@
       "types": "./dist/shared/components/selection/checkbox/index.d.ts",
       "default": "./dist/shared/components/selection/checkbox/index.js"
     },
+    "./data-table.js": {
+      "types": "./dist/shared/components/containment/data-table/index.d.ts",
+      "default": "./dist/shared/components/containment/data-table/index.js"
+    },
+    "./date-picker.js": {
+      "types": "./dist/shared/components/inputs/date-picker/index.d.ts",
+      "default": "./dist/shared/components/inputs/date-picker/index.js"
+    },
     "./dialog.js": {
       "types": "./dist/shared/components/feedback/dialog/index.d.ts",
       "default": "./dist/shared/components/feedback/dialog/index.js"
@@ -99,6 +107,10 @@
       "types": "./dist/shared/components/navigation/navigation-rail/index.d.ts",
       "default": "./dist/shared/components/navigation/navigation-rail/index.js"
     },
+    "./option.js": {
+      "types": "./dist/shared/components/inputs/option/index.d.ts",
+      "default": "./dist/shared/components/inputs/option/index.js"
+    },
     "./segment.js": {
       "types": "./dist/shared/components/buttons/segment/index.d.ts",
       "default": "./dist/shared/components/buttons/segment/index.js"
@@ -106,6 +118,10 @@
     "./segmented-button.js": {
       "types": "./dist/shared/components/buttons/segmented-button/index.d.ts",
       "default": "./dist/shared/components/buttons/segmented-button/index.js"
+    },
+    "./select.js": {
+      "types": "./dist/shared/components/inputs/select/index.d.ts",
+      "default": "./dist/shared/components/inputs/select/index.js"
     },
     "./snackbar.js": {
       "types": "./dist/shared/components/feedback/snackbar/index.d.ts",
@@ -115,9 +131,21 @@
       "types": "./dist/shared/components/selection/switch/index.d.ts",
       "default": "./dist/shared/components/selection/switch/index.js"
     },
+    "./table-cell.js": {
+      "types": "./dist/shared/components/containment/table-cell/index.d.ts",
+      "default": "./dist/shared/components/containment/table-cell/index.js"
+    },
+    "./table-row.js": {
+      "types": "./dist/shared/components/containment/table-row/index.d.ts",
+      "default": "./dist/shared/components/containment/table-row/index.js"
+    },
     "./text-field.js": {
       "types": "./dist/shared/components/inputs/text-field/index.d.ts",
       "default": "./dist/shared/components/inputs/text-field/index.js"
+    },
+    "./time-picker.js": {
+      "types": "./dist/shared/components/inputs/time-picker/index.d.ts",
+      "default": "./dist/shared/components/inputs/time-picker/index.js"
     },
     "./tooltip.js": {
       "types": "./dist/shared/components/feedback/tooltip/index.d.ts",
