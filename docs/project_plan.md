@@ -542,7 +542,7 @@ infrastructure is carried over from `su3-ui-component-catalog-template` and adap
 8. **README / README_JA / CLAUDE.md / catalog pages** (done, §17); the first manual npm publish is
    the owner's step, documented in the README.
 9. **After the MVP** (one task each, in priority order): Card (done, §17), Badge (done, §17), Segmented button (done, §17), Navigation
-   bar (done, §17), Snackbar (done, §17), Navigation rail (done, §17), Navigation drawer (done, §17), Tooltip (done, §17), Top app bar (done, §17), Dialog (done, §17), Menu (done, §17), Select, then pickers and Data table.
+   bar (done, §17), Snackbar (done, §17), Navigation rail (done, §17), Navigation drawer (done, §17), Tooltip (done, §17), Top app bar (done, §17), Dialog (done, §17), Menu (done, §17), Select (done, §17), Date picker (done, §17), Time picker (done, §17), Data table (done, §17). Item 9 is complete.
 
 ## 15. Acceptance Criteria
 
@@ -915,3 +915,55 @@ and explain the reasoning in the PR description.
   - Decisions: the item is the focus target and carries its role as host attributes (not
     `ElementInternals`, which tools such as Playwright do not see); no submenus and no link items;
     placement code is private to the menu instead of shared with the tooltip.
+- **Select completed (2026-10-23)**: `su3-select` and `su3-option`, in the `inputs` category.
+  Details: `docs/2026-10-23_02_select/`.
+  - Delivered: `src/shared/components/inputs/select/` and `.../option/`: a form-associated
+    single-choice control (`value`, `name`, `required`, `disabled`, `label`, `placeholder`,
+    `variant`, `supporting-text`, `error-text`, `open`) with a button that opens a listbox popup
+    below (or above) the field, keyboard navigation with wrap-around, Home, End and typeahead,
+    `input` and `change` events, `valueMissing` validation shown once touched, reset and state
+    restore, and the hooks `--su3-comp-select-*`; no new sys tokens. Shared groundwork:
+    `placePopup`, `PopupController`, `Typeahead` (in `behaviors/`, used by the menu too) and
+    `fieldFrame` (in `styles/`, for the select and the pickers).
+  - Decisions: the collapsible dropdown listbox pattern with focus on the options (ids cannot cross
+    the shadow boundary for `aria-activedescendant`); the options carry their roles as host
+    attributes; no search and no multiple selection.
+- **Date picker completed (2026-10-23)**: `su3-date-picker`, in the `inputs` category. Details:
+  `docs/2026-10-23_03_date-picker/`.
+  - Delivered: `src/shared/components/inputs/date-picker/`: a form-associated date control with an
+    ISO `value`, `min`, `max`, `locale`, `first-day-of-week`, a field button that opens a calendar
+    popup (or `inline` for the calendar alone), one month with month buttons, weekday names and a
+    grid of day buttons, grid keyboard navigation (arrows, Home, End, PageUp, PageDown with Shift
+    for years, Enter, Space, Escape), `input` and `change`, `valueMissing`, `rangeUnderflow`,
+    `rangeOverflow` and `badInput` validation, and the hooks `--su3-comp-date-picker-*`; no new sys
+    tokens. The pure date helpers are `behaviors/calendar-date.ts`.
+  - Decisions: calendar dates are plain year, month and day values computed with UTC day arithmetic;
+    days out of range use `aria-disabled` so they stay focusable; the month button names are
+    attributes (no built-in translations); days of neighbouring months are blank.
+- **Time picker completed (2026-10-23)**: `su3-time-picker`, in the `inputs` category. Details:
+  `docs/2026-10-23_04_time-picker/`.
+  - Delivered: `src/shared/components/inputs/time-picker/`: a form-associated time control with a
+    24-hour `HH:mm` `value`, `min`, `max`, `step`, `locale` and `hour-cycle`, a field button that opens
+    a popup with lists of hours, minutes and (on a 12-hour clock) AM or PM, or `inline` for the lists
+    alone, immediate commits with `input` and `change`, keyboard navigation between and inside the
+    lists, `valueMissing`, `rangeUnderflow`, `rangeOverflow`, `stepMismatch` and `badInput`
+    validation, and the hooks `--su3-comp-time-picker-*`; no new sys tokens. The pure helpers are
+    `behaviors/time-of-day.ts`.
+  - Decisions: every choice commits at once and the popup closes after the last list; choices are
+    computed from the current time at the moment of the click; disabled options use `aria-disabled`;
+    the list names are attributes (no built-in translations).
+- **Data table completed (2026-10-23)**: `su3-data-table`, `su3-table-row` and `su3-table-cell`, in
+  the `containment` category. Details: `docs/2026-10-23_05_data-table/`. This finishes item 9.
+  - Delivered: `src/shared/components/containment/data-table/`, `.../table-row/` and
+    `.../table-cell/`: a table whose rows share a CSS grid track list (`columns`), a header row, cell
+    alignment with ellipsis, `density` (comfortable 48px, compact 40px), scrolling with a
+    `--su3-comp-data-table-max-height` hook and a `sticky-header`, sortable header cells (`sort`,
+    `aria-sort`, a cycling click, Enter or Space, a `sort` event), selectable rows (`selected`,
+    `aria-selected`, a `select` event, one roving tab stop with ArrowUp, ArrowDown, Home and End),
+    and the hooks `--su3-comp-data-table-*`; no new sys tokens.
+  - Decisions: the roles are attributes on the elements themselves (no native table can hold the
+    light DOM rows), set from `connectedCallback` on; a selectable table is a `grid` with
+    `gridcell`s because only a grid may be multiselectable; the application sorts the data and the
+    table only reports the request; a click selects a row (no checkbox column) unless it hit a
+    control inside the row; a table that scrolls is a tab stop; one header row marked by `header`
+    on the row.

@@ -125,6 +125,21 @@ Buttons use `md`; a product may switch them to `pill` by overriding
 - Dialogs use the raised surface with `lg` corners and `elevation-3`, 24px padding, a `title`-type
   headline and `body`-type content, are at most 480px wide and leave 24px to the viewport edge; the
   actions sit at the end, 8px apart, 24px below the content; the scrim is the `overlay` color.
+- Selects use the text field's look (label above, 48px container with `sm` corners, a chevron at the
+  end, outlined or filled); the list is a menu-like popup (raised surface, `md` corners,
+  `elevation-2`, 4px from the field, at least as wide as the field) whose options are 48px high and
+  tinted with the accent subtle roles while chosen.
+- Date pickers use the select's field look with a calendar icon; the calendar is 280px wide (seven
+  40px columns) in a popup with 16px padding, a title-weight month heading between two 40px month
+  buttons, caption-size weekday names, pill-shaped 40px day buttons, today outlined in the accent
+  color and the chosen day filled with it.
+- Time pickers use the select's field look with a clock icon; the popup holds lists of 60px wide,
+  40px high pill options (a list scrolls after six rows), separated by a hairline, with the chosen
+  option filled with the accent color.
+- Data tables are outlined with `md` corners and the border color; rows are 48px high (40px compact)
+  with 16px side padding and a hairline below; the header row uses the raised surface and the
+  muted label type; a sortable header shows a 16px arrow, a selected row is tinted with the accent
+  subtle role and a selectable row tints with the hover opacity.
 - Menus use the raised surface with `md` corners, `elevation-2` and the elevation edge, 8px of
   padding above and below the items and a 192px minimum width, 4px from their trigger. Items are
   48px high with 16px side padding and 12px between icon, label and trailing text; hover, focus and
